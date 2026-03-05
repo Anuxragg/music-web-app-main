@@ -33,7 +33,7 @@ https://github.com/Lonka-Pardhu/music-web-app/assets/108354935/acd7d205-24b2-4bb
 Clone the project
 
 ```bash
-  git clone https://github.com/Lonka-Pardhu/music-web-app.git
+ https://github.com/Anuxragg/music-web-app-main.git
 ```
 
 Go to the project directory
