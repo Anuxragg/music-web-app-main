@@ -7,7 +7,7 @@ In-progress work involves designing the user interface and laying the foundation
 
 ## Live Demo:
 
-Visit the live deployment of this project (https://music-web-app-pardhu.vercel.app/).   
+
 
 ## Video:   
 
