@@ -1,21 +1,52 @@
 @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100&display=swap');
 
+* {
+  box-sizing: border-box;
+}
 
 body{
   margin: 0;
   background-color: #0E0E0E;
 }
+
 #root{
   font-family: 'Poppins', sans-serif;
   background-color: #0E0E0E;
   width: 100%;
+  min-height: 100vh;
 }
 
 .App{
   display: flex;
+  flex-direction: row;
+  min-height: 100vh;
 }
 
 .app-comp-wrap{
   display: flex;
   flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Tablet & Smaller Screen Support */
+@media (max-width: 768px) {
+  .App {
+    flex-direction: column;
+  }
+
+  .app-comp-wrap {
+    margin-top: 60px;
+  }
+}
+
+/* Mobile Support */
+@media (max-width: 480px) {
+  .App {
+    flex-direction: column;
+  }
+
+  .app-comp-wrap {
+    margin-top: 60px;
+  }
 }

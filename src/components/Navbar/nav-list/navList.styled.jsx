@@ -5,6 +5,10 @@ export const NavListContainerStyled = styled.div`
     flex-direction: column;
     gap: 10px;
     margin: 20px 0px 0px 20px;
+
+    @media (max-width: 480px) {
+      display: none;
+    }
 `
 
 export const NavListStyled = styled.div`
@@ -39,18 +43,40 @@ export const NavListStyled = styled.div`
     color: #f83821;
     letter-spacing: 2px;
   }
+
+  @media (max-width: 768px) {
+    width: 130px;
+    height: 36px;
+
+    > p, span {
+      margin: 0 0 0 15px;
+      font-size: 12px;
+    }
+
+    > span {
+      font-size: 16px;
+    }
+  }
 `;
 
 export const UserPlaylistContainerStyled = styled.div`
     margin: 40px 0 0 30px;
 
+    @media (max-width: 480px) {
+      display: none;
+    }
 `
+
 export const UserPlaylistHeadingStyled = styled.div`
     display: flex;
     align-items: center;
     font-size: 16px;
     color: white;
     font-weight: 600;
+
+    @media (max-width: 768px) {
+      font-size: 14px;
+    }
 `
 
 export const UserPlayListWrapperStyled = styled.div`
@@ -63,7 +89,7 @@ export const UserPlaylistStyled = styled.div`
     display: flex;
     align-items: center;
     cursor: pointer;
-    
+
     > p,span{
     margin: 0 0 0 10px;
     font-size: 13px;
@@ -72,5 +98,15 @@ export const UserPlaylistStyled = styled.div`
 
   >span{
     font-size: 16px;
+  }
+
+  @media (max-width: 768px) {
+    > p, span {
+      font-size: 12px;
+    }
+
+    > span {
+      font-size: 14px;
+    }
   }
 `

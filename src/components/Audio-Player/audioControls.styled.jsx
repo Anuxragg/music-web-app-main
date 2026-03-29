@@ -4,8 +4,19 @@ export const AudioControlsContainerStyled = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-right: 240px;  
+    margin-right: 240px;
+
+    @media (max-width: 768px) {
+      margin-right: 100px;
+    }
+
+    @media (max-width: 480px) {
+      margin-right: 0;
+      width: 100%;
+      order: 3;
+    }
 `
+
 export const AudioControlsWrapperStyled = styled.div`
   display: flex;
   align-items: center;
@@ -24,7 +35,18 @@ export const AudioControlsWrapperStyled = styled.div`
       cursor:pointer;
     }
   }
-  
+
+  @media (max-width: 480px) {
+    > span {
+      margin: 0 3px;
+      font-size: 35px;
+
+      &.previous-icon,
+      &.next-icon {
+        font-size: 30px;
+      }
+    }
+  }
 `
 
 export const SongSliderContainerStyled = styled.div`
@@ -32,12 +54,18 @@ export const SongSliderContainerStyled = styled.div`
   display: flex;
   align-items: center;
   gap:5px;
-  
+
   > p{
     font-weight: 300;
     font-size: 12px;
     letter-spacing: 0.5px;
     margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    > p {
+      font-size: 10px;
+    }
   }
 `
 
@@ -47,6 +75,15 @@ export const ProgressBarContainerStyled = styled.div`
   background-color: aliceblue;
   border-radius: 10px;
   cursor:pointer;
+
+  @media (max-width: 768px) {
+    width: 350px;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    max-width: 280px;
+  }
 `
 
 export const ProgressBarStyled = styled.div`
@@ -64,6 +101,10 @@ export const VolumeControlContainerStyled = styled.div`
   > span{
     margin-top: 5px;
   }
+
+  @media (max-width: 480px) {
+    display: none;
+  }
 `
 
 export const VolumeControlBarStyled = styled.div`
@@ -73,7 +114,11 @@ export const VolumeControlBarStyled = styled.div`
   border-radius: 5px;
   margin: 0 4px 0 4px;
   cursor: pointer;
-  `
+
+  @media (max-width: 480px) {
+    width: 70px;
+  }
+`
 
 export const VolumeChangeStyled = styled.div`
   height: 100%;

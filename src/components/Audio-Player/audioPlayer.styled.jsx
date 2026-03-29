@@ -8,6 +8,11 @@ export const AudioPlayerContainerStyled = styled.div`
   bottom: 0;
   left: 0;
   color: white;
+  z-index: 999;
+
+  @media (max-width: 480px) {
+    height: 80px;
+  }
 `;
 
 export const AudioPlayerWrapperStyled = styled.div`
@@ -15,6 +20,11 @@ export const AudioPlayerWrapperStyled = styled.div`
   align-items: center;
   justify-content: space-between;
   margin: 0 25px 0 25px;
+
+  @media (max-width: 480px) {
+    margin: 0 15px;
+    flex-wrap: wrap;
+  }
 `
 
 export const ActiveSongWrapperStyled = styled.div`
@@ -22,6 +32,15 @@ export const ActiveSongWrapperStyled = styled.div`
     width: 400px;
     display: flex;
     align-items: center;
+
+    @media (max-width: 768px) {
+      width: 300px;
+    }
+
+    @media (max-width: 480px) {
+      width: 100%;
+      margin-top: 10px;
+    }
 `;
 
 export const ActiveSongImageContainerStyled = styled.div`
@@ -32,6 +51,11 @@ export const ActiveSongImageContainerStyled = styled.div`
     border-radius: 5px;
     width: 100%;
     height: 100%;
+  }
+
+  @media (max-width: 480px) {
+    width: 50px;
+    height: 50px;
   }
 `;
 
@@ -47,5 +71,17 @@ export const ActiveSongDetailsStyled = styled.div`
     font-size: 12px;
     color: #b3b2b2;
     margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    margin-left: 10px;
+
+    > p:nth-child(1) {
+      font-size: 12px;
+    }
+
+    > p:nth-child(2) {
+      font-size: 11px;
+    }
   }
 `;
