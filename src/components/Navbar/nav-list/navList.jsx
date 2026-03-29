@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { GoHome } from "react-icons/go";
 import { MdOutlineExplore } from "react-icons/md";
 import { IoMdTrendingUp } from "react-icons/io";
@@ -6,7 +7,7 @@ import { MdOutlineFavoriteBorder } from "react-icons/md";
 import { TbPlaylist } from "react-icons/tb";
 import { NavListContainerStyled, NavListStyled, UserPlaylistContainerStyled, UserPlaylistHeadingStyled, UserPlayListWrapperStyled, UserPlaylistStyled } from "./navList.styled";
 
-export default function NavList() {
+export default function NavList({ menuOpen = false, currentView, setCurrentView }) {
 
     const navListItems = [
         { icon: <GoHome />, text: 'Home' },
@@ -16,11 +17,19 @@ export default function NavList() {
         { icon: <MdOutlineFavoriteBorder />, text: 'Favorites' },
     ];
 
+    const handleNavClick = (viewName) => {
+        setCurrentView(viewName);
+    };
+
     return (
         <>
-            <NavListContainerStyled>
+            <NavListContainerStyled $menuOpen={menuOpen}>
                 {navListItems.map((item, index) => (
-                    <NavListStyled key={index}>
+                    <NavListStyled
+                        key={index}
+                        $isActive={currentView === item.text}
+                        onClick={() => handleNavClick(item.text)}
+                    >
                         <span className="react-icon">
                             {item.icon}
                         </span>
@@ -29,7 +38,7 @@ export default function NavList() {
                 ))}
             </NavListContainerStyled>
 
-            <UserPlaylistContainerStyled>
+            <UserPlaylistContainerStyled $menuOpen={menuOpen}>
                 <UserPlaylistHeadingStyled>
                     <p>Your Playlist</p>
                 </UserPlaylistHeadingStyled>

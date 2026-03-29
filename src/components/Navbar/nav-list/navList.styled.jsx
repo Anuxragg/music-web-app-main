@@ -7,7 +7,9 @@ export const NavListContainerStyled = styled.div`
     margin: 20px 0px 0px 20px;
 
     @media (max-width: 480px) {
-      display: none;
+      display: ${props => props.$menuOpen ? 'flex' : 'none'};
+      margin: 20px 0;
+      width: 100%;
     }
 `
 
@@ -20,6 +22,7 @@ export const NavListStyled = styled.div`
   border-radius: 5px;
   transition: background-color 0.3s ease;
   cursor: pointer;
+  background-color: ${props => props.$isActive ? '#1A1A1A' : 'transparent'};
 
     &:hover {
     background-color: #1A1A1A;
@@ -28,12 +31,13 @@ export const NavListStyled = styled.div`
   > p,span {
       margin: 0 0 0 20px;
       font-size: 13px;
-      color: white;
+      color: ${props => props.$isActive ? '#f83821' : 'white'};
       transition: color 0.5s ease, letter-spacing 0.3s ease;
+      letter-spacing: ${props => props.$isActive ? '2px' : '0px'};
     }
 
     > span{
-      color: white;
+      color: ${props => props.$isActive ? '#f83821' : 'white'};
       font-size: 18px;
     }
 
@@ -57,13 +61,20 @@ export const NavListStyled = styled.div`
       font-size: 16px;
     }
   }
+
+  @media (max-width: 480px) {
+    width: calc(100% - 40px);
+    margin: 0 20px;
+  }
 `;
 
 export const UserPlaylistContainerStyled = styled.div`
     margin: 40px 0 0 30px;
 
     @media (max-width: 480px) {
-      display: none;
+      display: ${props => props.$menuOpen ? 'block' : 'none'};
+      margin: 20px 20px;
+      width: auto;
     }
 `
 

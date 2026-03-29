@@ -8,7 +8,9 @@ export const SearchFieldContainerStyled = styled.div`
     }
 
     @media (max-width: 480px) {
-      margin: 80px 0 0 0;
+      margin: 20px auto 0 auto;
+      display: flex;
+      justify-content: center;
     }
 `
 

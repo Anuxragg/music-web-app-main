@@ -5,10 +5,6 @@ A feature-rich Music Player web app in React, resembling Spotify, with a focus o
 In-progress work involves designing the user interface and laying the foundation for the app's fully functional features.
 
 
-## Live Demo:
-
-Visit the live deployment of this project (https://music-web-app-pardhu.vercel.app/).   
-
 ## Video:   
 
 

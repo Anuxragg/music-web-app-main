@@ -5,11 +5,28 @@ export const SongsListWrapperStyled = styled.div`
   max-width: 100%;
 
   @media (max-width: 768px) {
-    margin: 30px 0 120px 220px;
+    margin: 30px 0 30px 220px;
   }
 
   @media (max-width: 480px) {
-    margin: 30px 10px 100px 10px;
+    margin: 30px auto;
+    width: calc(100% - 20px);
+  }
+`
+
+export const ViewHeadingStyled = styled.h1`
+  color: white;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+
+  @media (max-width: 768px) {
+    font-size: 28px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 24px;
+    margin: 0 0 15px 0;
   }
 `
 
@@ -26,10 +43,11 @@ export const SongContainerStyled = styled.div`
   justify-content: space-between;
   transition: background-color 0.3s ease;
   cursor: pointer;
+  position: relative;
 
   &:hover{
-  background-color: #1A1A1A;
-}
+    background-color: #1A1A1A;
+  }
 
   @media (max-width: 768px) {
     width: 100%;
@@ -52,12 +70,19 @@ export const SongDetailsContainerStyled = styled.div`
 `
 
 export const SongDurationContainerStyled = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
   > p{
-  font-size: 13px;
-  font-weight: 300;
-}
+    font-size: 13px;
+    font-weight: 300;
+    margin: 0;
+  }
 
   @media (max-width: 480px) {
+    gap: 10px;
+
     > p {
       font-size: 11px;
     }
@@ -103,5 +128,37 @@ export const SongNameArtistStyled = styled.div`
     > p:nth-child(2) {
       font-size: 11px;
     }
+  }
+`
+
+export const LikeButtonStyled = styled.button`
+  background: none;
+  border: none;
+  color: ${props => props.$isFavorite ? '#f83821' : '#b3b2b2'};
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: ${props => props.$isFavorite ? '1' : '0'};
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease;
+
+  ${SongContainerStyled}:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    transform: scale(1.15);
+    color: #f83821;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  @media (max-width: 480px) {
+    font-size: 18px;
+    opacity: 1;
   }
 `

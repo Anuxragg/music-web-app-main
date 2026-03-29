@@ -1,17 +1,19 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react"
-import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled } from "./audioPlayer.styled";
+import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled, ActiveSongLikeButtonStyled } from "./audioPlayer.styled";
 import { AudioPlayerDefaultStyled } from "./audioPlayerDefault.styled";
 import { AudioControlsContainerStyled, AudioControlsWrapperStyled, VolumeControlContainerStyled, VolumeControlBarStyled, VolumeChangeStyled, SongSliderContainerStyled, ProgressBarContainerStyled, ProgressBarStyled } from "./audioControls.styled";
 import { IoPlayCircleSharp, IoPauseCircleSharp } from "react-icons/io5";
 import { BiSkipNext, BiSkipPrevious } from "react-icons/bi";
-import { MdVolumeUp } from "react-icons/md";
+import { MdVolumeUp, MdVolumeMute, MdFavorite, MdFavoriteBorder } from "react-icons/md";
 
-export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying }) {
+export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSongFavorite, onToggleFavorite }) {
 
     const [audioMetaData, setAudioMetaData] = useState(false);
     const [duration, setDuration] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
+    const [isMuted, setIsMuted] = useState(false);
+    const [previousVolume, setPreviousVolume] = useState(0.5);
     const audioRef = useRef(null);
     const progressBarRef = useRef(null);
     const songBarRef = useRef(null);
@@ -23,6 +25,28 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying }) {
             audioRef.current.load();
         }
     }, [pickedSong])
+
+    // Scroll wheel volume control
+    useEffect(() => {
+        const handleWheel = (e) => {
+            if (volumeControlBarRef.current && volumeControlBarRef.current.contains(e.target)) {
+                e.preventDefault();
+                const currentVolume = audioRef.current.volume;
+                const scrollDirection = e.deltaY > 0 ? -0.1 : 0.1;
+                const newVolume = Math.max(0, Math.min(1, currentVolume + scrollDirection));
+
+                audioRef.current.volume = newVolume;
+                volumeChangeRef.current.style.width = `${newVolume * 100}%`;
+
+                if (newVolume > 0 && isMuted) {
+                    setIsMuted(false);
+                }
+            }
+        };
+
+        window.addEventListener('wheel', handleWheel, { passive: false });
+        return () => window.removeEventListener('wheel', handleWheel);
+    }, [isMuted]);
 
     const handlePlayPause = () => {
         if (isPlaying) {
@@ -76,11 +100,26 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying }) {
         const volumeClickPosition = e.pageX - volumeControlBarRef.current.getBoundingClientRect().left;
         const volumeChangeInPercentage = (volumeClickPosition / volumeControlBarRef.current.offsetWidth) * 100;
         const volumeChangeValue = 0.01 * volumeChangeInPercentage;
-        console.log(volumeChangeValue);
         audioRef.current.volume = volumeChangeValue;
-        console.log(audioRef.current.volume)
         volumeChangeRef.current.style.width = `${volumeChangeInPercentage}%`
+        if (volumeChangeValue > 0 && isMuted) {
+            setIsMuted(false);
+        }
+    }
 
+    const handleMuteToggle = () => {
+        if (isMuted) {
+            // Unmute
+            audioRef.current.volume = previousVolume;
+            volumeChangeRef.current.style.width = `${previousVolume * 100}%`;
+            setIsMuted(false);
+        } else {
+            // Mute
+            setPreviousVolume(audioRef.current.volume);
+            audioRef.current.volume = 0;
+            volumeChangeRef.current.style.width = '0%';
+            setIsMuted(true);
+        }
     }
 
     if (!pickedSong) {
@@ -102,6 +141,11 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying }) {
                         <p>{pickedSong.songName}</p>
                         <p>{pickedSong.artist}</p>
                     </ActiveSongDetailsStyled>
+                    {onToggleFavorite && (
+                        <ActiveSongLikeButtonStyled onClick={onToggleFavorite} $isFavorite={isSongFavorite}>
+                            {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
+                        </ActiveSongLikeButtonStyled>
+                    )}
                 </ActiveSongWrapperStyled>
 
                 <audio autoPlay onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleMetaDataLoad} style={{ display: "none" }} ref={audioRef}>
@@ -140,8 +184,11 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying }) {
                     </SongSliderContainerStyled>
 
                 </AudioControlsContainerStyled>
+
                 <VolumeControlContainerStyled>
-                    <span className="react-icon"><MdVolumeUp /></span>
+                    <span className="react-icon" onClick={handleMuteToggle} style={{ cursor: 'pointer' }}>
+                        {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
+                    </span>
                     <VolumeControlBarStyled ref={volumeControlBarRef} onClick={handleVolumeChange}>
                         <VolumeChangeStyled ref={volumeChangeRef}></VolumeChangeStyled>
                     </VolumeControlBarStyled>
