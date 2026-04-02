@@ -1,19 +1,15 @@
 /* eslint-disable react/prop-types */
 import { GoHome } from "react-icons/go";
 import { MdOutlineExplore } from "react-icons/md";
-import { IoMdTrendingUp } from "react-icons/io";
-import { MdOutlinePodcasts } from "react-icons/md";
 import { MdOutlineFavoriteBorder } from "react-icons/md";
 import { TbPlaylist } from "react-icons/tb";
 import { NavListContainerStyled, NavListStyled, UserPlaylistContainerStyled, UserPlaylistHeadingStyled, UserPlayListWrapperStyled, UserPlaylistStyled } from "./navList.styled";
 
-export default function NavList({ menuOpen = false, currentView, setCurrentView }) {
+export default function NavList({ menuOpen = false, collapsed = false, currentView, setCurrentView }) {
 
     const navListItems = [
         { icon: <GoHome />, text: 'Home' },
         { icon: <MdOutlineExplore />, text: 'Explore' },
-        { icon: <IoMdTrendingUp />, text: 'Trending' },
-        { icon: <MdOutlinePodcasts />, text: 'Podcasts' },
         { icon: <MdOutlineFavoriteBorder />, text: 'Favorites' },
     ];
 
@@ -23,10 +19,11 @@ export default function NavList({ menuOpen = false, currentView, setCurrentView 
 
     return (
         <>
-            <NavListContainerStyled $menuOpen={menuOpen}>
+            <NavListContainerStyled $menuOpen={menuOpen} $collapsed={collapsed}>
                 {navListItems.map((item, index) => (
                     <NavListStyled
                         key={index}
+                        $collapsed={collapsed}
                         $isActive={currentView === item.text}
                         onClick={() => handleNavClick(item.text)}
                     >
@@ -38,7 +35,7 @@ export default function NavList({ menuOpen = false, currentView, setCurrentView 
                 ))}
             </NavListContainerStyled>
 
-            <UserPlaylistContainerStyled $menuOpen={menuOpen}>
+            <UserPlaylistContainerStyled $menuOpen={menuOpen} $collapsed={collapsed}>
                 <UserPlaylistHeadingStyled>
                     <p>Your Playlist</p>
                 </UserPlaylistHeadingStyled>

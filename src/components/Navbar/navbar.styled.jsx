@@ -3,13 +3,14 @@ import { styled } from "styled-components";
 export const NavContainerStyled = styled.div`
   position: fixed;
   height: 100%;
-  width: 220px;
+  width: ${props => props.$collapsed ? '84px' : '220px'};
   background-color: #121212;
   overflow-y: auto;
   z-index: 1000;
+  transition: width 0.25s ease;
 
   @media (max-width: 768px) {
-    width: 200px;
+    width: ${props => props.$collapsed ? '78px' : '200px'};
   }
 
   @media (max-width: 480px) {
@@ -78,6 +79,7 @@ export const AppNameContainerStyled = styled.div`
   font-family: 'Dela Gothic One', sans-serif;
   cursor: pointer;
   transition: color 0.2s ease;
+  display: ${props => props.$collapsed ? 'none' : 'block'};
 
   &:hover {
     color: #f83821;
@@ -90,6 +92,20 @@ export const AppNameContainerStyled = styled.div`
   > p:nth-child(2) {
     margin: -10px 0  0 0;
   }
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+`
+
+export const EdgeHandleStyled = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 14px;
+  height: 100%;
+  cursor: ew-resize;
+  background: transparent;
 
   @media (max-width: 480px) {
     display: none;

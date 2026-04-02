@@ -4,7 +4,7 @@ export const NavListContainerStyled = styled.div`
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin: 20px 0px 0px 20px;
+  margin: 20px 0px 0px ${props => props.$collapsed ? '14px' : '20px'};
 
     @media (max-width: 480px) {
       display: ${props => props.$menuOpen ? 'flex' : 'none'};
@@ -18,7 +18,7 @@ export const NavListStyled = styled.div`
   display: flex;
   align-items: center;
   height: 40px;
-  width: 150px;
+  width: ${props => props.$collapsed ? '52px' : '150px'};
   border-radius: 5px;
   transition: background-color 0.3s ease;
   cursor: pointer;
@@ -36,7 +36,12 @@ export const NavListStyled = styled.div`
       letter-spacing: ${props => props.$isActive ? '2px' : '0px'};
     }
 
+  > p {
+    display: ${props => props.$collapsed ? 'none' : 'block'};
+  }
+
     > span{
+      margin: ${props => props.$collapsed ? '0 auto' : '0 0 0 20px'};
       color: ${props => props.$isActive ? '#f83821' : 'white'};
       font-size: 18px;
     }
@@ -69,7 +74,8 @@ export const NavListStyled = styled.div`
 `;
 
 export const UserPlaylistContainerStyled = styled.div`
-    margin: 40px 0 0 30px;
+  margin: 40px 0 0 30px;
+  display: ${props => props.$collapsed ? 'none' : 'block'};
 
     @media (max-width: 480px) {
       display: ${props => props.$menuOpen ? 'block' : 'none'};

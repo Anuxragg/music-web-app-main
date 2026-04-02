@@ -1,0 +1,359 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styled, { keyframes, createGlobalStyle } from 'styled-components';
+ 
+const Fonts = createGlobalStyle`
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+`;
+ 
+const scrollDiagonal = keyframes`
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+`;
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+ 
+const GridBg = styled.div`
+  position: fixed;
+  inset: -160px;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(170px, 1fr));
+  gap: 16px;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(-16deg) scale(1.14);
+`;
+ 
+const SPEEDS = [46, 40, 43, 38, 48, 42, 45, 39];
+const DELAYS = [-14, -6, -11, -3, -16, -9, -13, -4];
+const REPEAT_COUNT = 6;
+ 
+const Col = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: ${scrollDiagonal} ${({ $speed }) => $speed}s linear infinite;
+  animation-delay: ${({ $delay }) => $delay}s;
+  transform: translateY(${({ $offset }) => $offset}px);
+  will-change: transform;
+`;
+ 
+const Tile = styled.div`
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: ${({ $bg }) => $bg} center / cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  filter: brightness(1.25) contrast(1.1) saturate(1.12);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.18);
+`
+ 
+const Vignette = styled.div`
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 75% at 50% 50%,
+    rgba(0, 0, 0, 0.14) 0%,
+    rgba(0, 0, 0, 0.68) 75%
+  );
+  z-index: 1;
+`;
+ 
+const Page = styled.div`
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  font-family: 'DM Sans', sans-serif;
+`;
+ 
+/* The Netflix-style subtle dark card */
+const Card = styled.div`
+  width: 100%;
+  max-width: 400px;
+  padding: 48px 44px 40px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 6px;
+  animation: ${fadeUp} 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+ 
+  @media (max-width: 500px) {
+    padding: 40px 24px 32px;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.85);
+  }
+`;
+ 
+const Logo = styled.div`
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #e50914;
+  text-align: center;
+  margin-bottom: 24px;
+`;
+ 
+const Heading = styled.h1`
+  font-family: 'Syne', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+  margin-bottom: 20px;
+`;
+ 
+const Input = styled.input`
+  width: 100%;
+  background: #333;
+  border: none;
+  border-radius: 4px;
+  padding: 16px;
+  color: #fff;
+  font-size: 0.92rem;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  margin-bottom: 12px;
+  transition: background 0.15s;
+ 
+  &::placeholder { color: #8c8c8c; }
+  &:focus { background: #454545; }
+`;
+ 
+const SlideField = styled.div`
+  overflow: hidden;
+  max-height: ${({ $show }) => $show ? '400px' : '0px'};
+  opacity: ${({ $show }) => $show ? 1 : 0};
+  transition:
+    max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease;
+`;
+ 
+const ErrorMsg = styled.div`
+  font-size: 0.8rem;
+  color: #ff6b6b;
+  margin-bottom: 12px;
+  padding: 11px 14px;
+  background: rgba(229, 9, 20, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #e50914;
+`;
+ 
+const SubmitBtn = styled.button`
+  width: 100%;
+  padding: 15px;
+  background: #e50914;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 4px;
+ 
+  &:hover:not(:disabled) { background: #f40612; }
+  &:active:not(:disabled) { background: #c40812; transform: scale(0.99); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+`;
+ 
+const Footer = styled.p`
+  font-size: 0.85rem;
+  color: #737373;
+  margin-top: 20px;
+ 
+  button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    &:hover { text-decoration: underline; }
+  }
+`;
+ 
+const TILES = [
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/w_300,h_450,c_fill/Tame-Impala-Currents_scbitd.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/w_300,h_450,c_fill/3YV2PTJAVFGCVJK5IC6RJYY6EA_vpgdsu.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/w_300,h_450,c_fill/Graduation__28album_29_fy2qju.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775156900/5f06f7f6_rqcpsi.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775156988/The_Weeknd_-_After_Hours_h7xmrt.png")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157039/Travis_Scott_-_Astroworld_qdoxwi.png")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157118/61B0hKrHZRL._UF1000_1000_QL80__inl0ca.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157146/a4052037710_16_n1rjnz.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157262/rs-125615-092313-weekend-rock-01-500-1379961884_ltjonx.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157307/Inrainbowscover_tk8z9p.png")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157380/ab67616d0000b2736b219c8d8462bfe254a20469_slw2hh.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157465/1900x1900-000000-80-0-0_hok1ew.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157504/Igor_-_Tyler_2C_the_Creator_flrhce.jpg")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157625/marina-and-levi-as-the-tv-girl-album-cover-v0-n3md5spiq8hd1_nf7ggy.png")' },
+  { bg: 'url("https://res.cloudinary.com/dgqxnmhmx/image/upload/v1775157947/french-exit_cpy6kn.png")' },
+];
+ 
+export default function AuthPage() {
+  const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const [mode, setMode]   = useState('login');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [form, setForm]   = useState({
+    username: '', email: '', password: '', confirmPassword: '',
+  });
+ 
+  const isRegister = mode === 'register';
+  const set = (key) => (e) => { setForm(f => ({ ...f, [key]: e.target.value })); setError(''); };
+ 
+  const switchMode = (m) => {
+    setMode(m);
+    setError('');
+    setForm({ username: '', email: '', password: '', confirmPassword: '' });
+  };
+ 
+  const validate = () => {
+    if (!form.email.trim()) { setError('Email is required.'); return false; }
+    if (!form.password)     { setError('Password is required.'); return false; }
+    if (isRegister) {
+      if (!form.username.trim())                  { setError('Username is required.'); return false; }
+      if (form.username.length < 3)               { setError('Username must be at least 3 characters.'); return false; }
+      if (form.password.length < 6)               { setError('Password must be at least 6 characters.'); return false; }
+      if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return false; }
+    }
+    return true;
+  };
+ 
+  const handleSubmit = async () => {
+    setError('');
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const endpoint = isRegister
+        ? `${API_BASE}/api/auth/register`
+        : `${API_BASE}/api/auth/login`;
+      const body = isRegister
+        ? {
+            username: form.username,
+            email: form.email,
+            password: form.password,
+            passwordConfirm: form.confirmPassword,
+          }
+        : { email: form.email, password: form.password };
+ 
+      const res  = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.message || 'Something went wrong.');
+        return;
+      }
+
+      navigate('/');
+    } catch (err) {
+      setError('Network error. Make sure the server is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
+  const onKey = (e) => { if (e.key === 'Enter') handleSubmit(); };
+ 
+  return (
+    <>
+      <Fonts />
+ 
+      <GridBg>
+        {SPEEDS.map((speed, ci) => (
+          <Col key={ci} $speed={speed} $delay={DELAYS[ci]} $offset={(ci % 2) * 38}>
+            {Array.from({ length: REPEAT_COUNT }).map((_, repeat) =>
+              TILES.map((_, ti) => {
+                const shiftedTile = TILES[(ti + ci) % TILES.length];
+                return <Tile key={`${repeat}-${ci}-${ti}`} $bg={shiftedTile.bg} />;
+              })
+            )}
+          </Col>
+        ))}
+      </GridBg>
+ 
+      <Vignette />
+ 
+      <Page>
+        <Card>
+          <Logo>VOCALZ</Logo>
+          <Heading>{isRegister ? 'Create Account' : 'Sign In'}</Heading>
+ 
+          <SlideField $show={isRegister}>
+            <Input
+              type="text"
+              placeholder="Username"
+              value={form.username}
+              onChange={set('username')}
+              onKeyDown={onKey}
+              autoComplete="username"
+            />
+          </SlideField>
+ 
+          <Input
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={set('email')}
+            onKeyDown={onKey}
+            autoComplete="email"
+          />
+ 
+          <Input
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={set('password')}
+            onKeyDown={onKey}
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
+          />
+ 
+          <SlideField $show={isRegister}>
+            <Input
+              type="password"
+              placeholder="Confirm Password"
+              value={form.confirmPassword}
+              onChange={set('confirmPassword')}
+              onKeyDown={onKey}
+              autoComplete="new-password"
+            />
+          </SlideField>
+ 
+          {error && <ErrorMsg>{error}</ErrorMsg>}
+ 
+          <SubmitBtn onClick={handleSubmit} disabled={loading}>
+            {loading
+              ? (isRegister ? 'Creating account...' : 'Signing in...')
+              : (isRegister ? 'Sign Up' : 'Sign In')
+            }
+          </SubmitBtn>
+ 
+          <Footer>
+            {isRegister
+              ? <>Already a member?{' '}<button onClick={() => switchMode('login')}>Sign in.</button></>
+              : <>New to VOCALZ?{' '}<button onClick={() => switchMode('register')}>Sign up now.</button></>
+            }
+          </Footer>
+        </Card>
+      </Page>
+    </>
+  );
+}
+ 
