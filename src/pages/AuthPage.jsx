@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes, createGlobalStyle } from 'styled-components';
+import { useAuth } from '../context/AuthContext';
  
 const Fonts = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
@@ -204,7 +205,7 @@ const TILES = [
  
 export default function AuthPage() {
   const navigate = useNavigate();
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const { login, register } = useAuth();
   const [mode, setMode]   = useState('login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -238,33 +239,23 @@ export default function AuthPage() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const endpoint = isRegister
-        ? `${API_BASE}/api/auth/register`
-        : `${API_BASE}/api/auth/login`;
       const body = isRegister
         ? {
             username: form.username,
             email: form.email,
             password: form.password,
-            passwordConfirm: form.confirmPassword,
           }
         : { email: form.email, password: form.password };
- 
-      const res  = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.message || 'Something went wrong.');
-        return;
+
+      if (isRegister) {
+        await register(body);
+      } else {
+        await login(body);
       }
 
       navigate('/');
     } catch (err) {
-      setError('Network error. Make sure the server is running.');
+      setError(err?.response?.data?.message || 'Network error. Make sure the server is running.');
     } finally {
       setLoading(false);
     }

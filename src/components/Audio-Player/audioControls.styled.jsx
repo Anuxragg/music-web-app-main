@@ -2,22 +2,62 @@ import styled from "styled-components";
 
 export const AudioControlsContainerStyled = styled.div`
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    flex: 1;
-    min-width: 350px;
-    gap: 8px;
+    gap: 12px;
+    flex-shrink: 0;
 
     @media (max-width: 768px) {
-      min-width: 300px;
+      gap: 8px;
     }
 
     @media (max-width: 480px) {
-      min-width: unset;
       width: 100%;
-      order: 2;
-      gap: 10px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+`
+
+export const MainPlayButtonStyled = styled.div`
+    width: 48px;
+    height: 48px;
+    background-color: #f83821;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+
+    &:hover {
+        transform: scale(1.08);
+        background-color: #ff4a36;
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+`
+
+export const ControlIconStyled = styled.span`
+    color: ${props => props.$active ? '#f83821' : '#b3b3b3'};
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 6px;
+
+    &:hover {
+        color: white;
+        transform: scale(1.1);
+    }
+
+    &.prev-next {
+        font-size: 28px;
     }
 `
 
@@ -78,16 +118,18 @@ export const AudioControlsWrapperStyled = styled.div`
 export const SongSliderContainerStyled = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
+  gap: 12px;
+  flex: 1;
   justify-content: center;
+  margin: 0;
 
-  > p{
+  > p {
     font-weight: 300;
-    font-size: 12px;
+    font-size: 13px;
     letter-spacing: 0.5px;
     margin: 0;
-    min-width: 38px;
+    min-width: 40px;
+    color: #b3b3b3;
     text-align: center;
   }
 
@@ -111,28 +153,28 @@ export const SongSliderContainerStyled = styled.div`
 `
 
 export const ProgressBarContainerStyled = styled.div`
-  width: 500px;
+  flex: 1; /* Fill the space between timestamps */
+  max-width: 500px;
   height: 4px;
-  background-color: aliceblue;
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   cursor: pointer;
-  flex-shrink: 1;
+  position: relative;
+
+  &:hover > div::after {
+    transform: translateY(-50%) scale(1);
+  }
+
+  @media (max-width: 1200px) {
+    width: 220px;
+  }
 
   @media (max-width: 1024px) {
-    width: 400px;
+    width: 180px;
   }
 
   @media (max-width: 768px) {
-    width: 300px;
-  }
-
-  @media (max-width: 600px) {
-    width: 250px;
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-    max-width: 280px;
+    width: 140px;
   }
 `
 
@@ -142,64 +184,78 @@ export const ProgressBarStyled = styled.div`
   width: 0%;
   border-radius: 10px;
   transition: width 0.1s ease-in-out;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 12px;
+    height: 12px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform 0.1s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
 `
 
 export const VolumeControlContainerStyled = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   flex-shrink: 0;
-  margin-top: 0;
+  margin: 0;
+  cursor: pointer;
 
-  > span{
+  &:hover > div:last-child {
+    width: 80px;
+    opacity: 1;
+    margin-left: 8px;
+  }
+
+  > span {
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
     margin: 0;
+    color: #b3b3b3;
 
     &:hover {
       transform: scale(1.1);
+      color: white;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    &:hover > div:last-child {
+      width: 65px;
     }
   }
 
   @media (max-width: 768px) {
-    gap: 6px;
-
-    > span {
-      font-size: 18px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    order: 3;
-    width: auto;
-    gap: 6px;
-
-    > span {
-      font-size: 18px;
-    }
+    display: none;
   }
 `
 
 export const VolumeControlBarStyled = styled.div`
   height: 4px;
-  width: 100px;
-  background-color: aliceblue;
+  width: 0;
+  opacity: 0;
+  background-color: rgba(255, 255, 255, 0.15);
   border-radius: 5px;
   cursor: pointer;
   flex-shrink: 0;
   margin: 0;
-  padding: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 
-  @media (max-width: 768px) {
-    width: 80px;
-  }
-
-  @media (max-width: 480px) {
-    width: 60px;
+  &:hover > div::after {
+    transform: translateY(-50%) scale(1);
   }
 `
 
@@ -209,4 +265,19 @@ export const VolumeChangeStyled = styled.div`
   border-radius: 5px;
   background-color: #f83821;
   transition: width 0.1s ease-in-out;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 10px;
+    height: 10px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform 0.1s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
 `

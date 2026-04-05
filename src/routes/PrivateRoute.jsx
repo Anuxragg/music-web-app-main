@@ -1,12 +1,17 @@
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function PrivateRoute({ element }) {
-  const accessToken = localStorage.getItem('accessToken');
-  
-  if (!accessToken) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return element;
 }
 

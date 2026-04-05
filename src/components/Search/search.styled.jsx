@@ -1,16 +1,16 @@
 import styled from 'styled-components';
 
 export const SearchFieldContainerStyled = styled.div`
-    margin: 20px 0 0 280px;
+    display: flex;
+    justify-content: center;
+    margin: -40px 0 0 0;
 
     @media (max-width: 768px) {
-      margin: 20px 0 0 210px;
+      margin: -35px 0 0 0;
     }
 
     @media (max-width: 480px) {
-      margin: 20px auto 0 auto;
-      display: flex;
-      justify-content: center;
+      margin: -25px auto 0 auto;
     }
 `
 

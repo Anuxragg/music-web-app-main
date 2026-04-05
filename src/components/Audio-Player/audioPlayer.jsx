@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react"
-import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled, ActiveSongLikeButtonStyled } from "./audioPlayer.styled";
+import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled, ActiveSongLikeButtonStyled, ActionGroupStyled, PlaybackControlsGroupStyled, CenterGroupStyled, IdentityGroupStyled } from "./audioPlayer.styled";
 import { AudioPlayerDefaultStyled } from "./audioPlayerDefault.styled";
-import { AudioControlsContainerStyled, AudioControlsWrapperStyled, VolumeControlContainerStyled, VolumeControlBarStyled, VolumeChangeStyled, SongSliderContainerStyled, ProgressBarContainerStyled, ProgressBarStyled } from "./audioControls.styled";
-import { IoPlayCircleSharp, IoPauseCircleSharp } from "react-icons/io5";
+import { AudioControlsContainerStyled, MainPlayButtonStyled, ControlIconStyled, VolumeControlContainerStyled, VolumeControlBarStyled, VolumeChangeStyled, SongSliderContainerStyled, ProgressBarContainerStyled, ProgressBarStyled } from "./audioControls.styled";
+import { IoPlay, IoPause, IoShuffleOutline, IoRepeatOutline } from "react-icons/io5";
 import { BiSkipNext, BiSkipPrevious } from "react-icons/bi";
-import { MdVolumeUp, MdVolumeMute, MdFavorite, MdFavoriteBorder } from "react-icons/md";
+import { MdVolumeUp, MdVolumeMute, MdFavorite, MdFavoriteBorder, MdAddCircleOutline, MdPlaylistAdd, MdDevices, MdQueueMusic, MdMoreHoriz, MdOpenInFull } from "react-icons/md";
 
 export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSongFavorite, onToggleFavorite }) {
 
@@ -13,6 +13,8 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     const [duration, setDuration] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
     const [isMuted, setIsMuted] = useState(false);
+    const [isShuffle, setIsShuffle] = useState(false);
+    const [isRepeat, setIsRepeat] = useState(false);
     const [previousVolume, setPreviousVolume] = useState(0.5);
     const audioRef = useRef(null);
     const progressBarRef = useRef(null);
@@ -21,10 +23,27 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     const volumeChangeRef = useRef(null);
 
     useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.load();
+        if (audioRef.current && pickedSong) {
+            const audioUrl = pickedSong.audioFile || pickedSong.audioUrl;
+            if (audioUrl) {
+                audioRef.current.src = audioUrl;
+                audioRef.current.load();
+                if (isPlaying) {
+                    audioRef.current.play().catch(err => console.error('Audio play error:', err));
+                }
+            }
         }
-    }, [pickedSong])
+    }, [pickedSong]);
+
+    useEffect(() => {
+        if (audioRef.current && pickedSong) {
+            if (isPlaying) {
+                audioRef.current.play().catch(err => console.error('Audio play error:', err));
+            } else {
+                audioRef.current.pause();
+            }
+        }
+    }, [isPlaying]);
 
     // Scroll wheel volume control
     useEffect(() => {
@@ -32,13 +51,16 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
             if (volumeControlBarRef.current && volumeControlBarRef.current.contains(e.target)) {
                 e.preventDefault();
                 const currentVolume = audioRef.current.volume;
+                // Determine linear width value backward from perceived quadratic curve
+                const currentVisualVolume = Math.sqrt(currentVolume);
                 const scrollDirection = e.deltaY > 0 ? -0.1 : 0.1;
-                const newVolume = Math.max(0, Math.min(1, currentVolume + scrollDirection));
+                const newVisualVolume = Math.max(0, Math.min(1, currentVisualVolume + scrollDirection));
 
-                audioRef.current.volume = newVolume;
-                volumeChangeRef.current.style.width = `${newVolume * 100}%`;
+                // Square the visual volume to simulate logarithmic perception
+                audioRef.current.volume = newVisualVolume * newVisualVolume;
+                volumeChangeRef.current.style.width = `${newVisualVolume * 100}%`;
 
-                if (newVolume > 0 && isMuted) {
+                if (newVisualVolume > 0 && isMuted) {
                     setIsMuted(false);
                 }
             }
@@ -49,12 +71,7 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     }, [isMuted]);
 
     const handlePlayPause = () => {
-        if (isPlaying) {
-            audioRef.current.pause();
-        } else {
-            audioRef.current.play();
-        }
-        setIsPlaying(isPlaying => !isPlaying)
+        setIsPlaying(prev => !prev);
     }
     const handleNext = () => {
         console.log('next clicked')
@@ -99,10 +116,14 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     const handleVolumeChange = (e) => {
         const volumeClickPosition = e.pageX - volumeControlBarRef.current.getBoundingClientRect().left;
         const volumeChangeInPercentage = (volumeClickPosition / volumeControlBarRef.current.offsetWidth) * 100;
-        const volumeChangeValue = 0.01 * volumeChangeInPercentage;
-        audioRef.current.volume = volumeChangeValue;
+        const visualVolume = 0.01 * volumeChangeInPercentage;
+
+        // Square the visual volume to simulate logarithmic audio perception
+        const actualVolume = visualVolume * visualVolume;
+
+        audioRef.current.volume = actualVolume;
         volumeChangeRef.current.style.width = `${volumeChangeInPercentage}%`
-        if (volumeChangeValue > 0 && isMuted) {
+        if (actualVolume > 0 && isMuted) {
             setIsMuted(false);
         }
     }
@@ -111,7 +132,8 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
         if (isMuted) {
             // Unmute
             audioRef.current.volume = previousVolume;
-            volumeChangeRef.current.style.width = `${previousVolume * 100}%`;
+            const visualVolume = Math.sqrt(previousVolume);
+            volumeChangeRef.current.style.width = `${visualVolume * 100}%`;
             setIsMuted(false);
         } else {
             // Mute
@@ -123,76 +145,85 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     }
 
     if (!pickedSong) {
-        return (
-            <AudioPlayerDefaultStyled>
-                <h2>Please click on any of the songs above</h2>
-            </AudioPlayerDefaultStyled>
-        )
+        return null;
     }
 
     return (
         <AudioPlayerContainerStyled>
             <AudioPlayerWrapperStyled>
-                <ActiveSongWrapperStyled>
-                    <ActiveSongImageContainerStyled>
-                        <img src={pickedSong.songImage} alt="albumImage" />
-                    </ActiveSongImageContainerStyled>
-                    <ActiveSongDetailsStyled>
-                        <p>{pickedSong.songName}</p>
-                        <p>{pickedSong.artist}</p>
-                    </ActiveSongDetailsStyled>
+                <audio onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleMetaDataLoad} style={{ display: "none" }} ref={audioRef}></audio>
+
+                {/* 1. Playback Controls (Pinned Left) */}
+                <PlaybackControlsGroupStyled>
+                    <MainPlayButtonStyled onClick={handlePlayPause}>
+                        {isPlaying ? <IoPause /> : <IoPlay style={{ marginLeft: '3px' }} />}
+                    </MainPlayButtonStyled>
+
+                    <ControlIconStyled className="prev-next" onClick={handlePrevious}>
+                        <BiSkipPrevious />
+                    </ControlIconStyled>
+                    <ControlIconStyled className="prev-next" onClick={handleNext}>
+                        <BiSkipNext />
+                    </ControlIconStyled>
+
+                    <ControlIconStyled $active={isShuffle} onClick={() => setIsShuffle(!isShuffle)}>
+                        <IoShuffleOutline />
+                    </ControlIconStyled>
+                    <ControlIconStyled $active={isRepeat} onClick={() => setIsRepeat(!isRepeat)}>
+                        <IoRepeatOutline />
+                    </ControlIconStyled>
+                </PlaybackControlsGroupStyled>
+
+                {/* 2. Center Group (Pinned Center: Time, Bar, Vol, Art, Info) */}
+                <CenterGroupStyled>
+                    <SongSliderContainerStyled>
+                        {audioMetaData && (
+                            <>
+                                <p className="current-time">{currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds}</p>
+                                <ProgressBarContainerStyled ref={songBarRef} onClick={handleProgressBarClick}>
+                                    <ProgressBarStyled ref={progressBarRef}></ProgressBarStyled>
+                                </ProgressBarContainerStyled>
+                                <p className="duration-text">{duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}</p>
+                            </>
+                        )}
+                    </SongSliderContainerStyled>
+
+                    <VolumeControlContainerStyled>
+                        <span className="react-icon" onClick={handleMuteToggle}>
+                            {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
+                        </span>
+                        <VolumeControlBarStyled volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50} ref={volumeControlBarRef} onClick={handleVolumeChange}>
+                            <VolumeChangeStyled ref={volumeChangeRef}></VolumeChangeStyled>
+                        </VolumeControlBarStyled>
+                    </VolumeControlContainerStyled>
+
+                    <IdentityGroupStyled>
+                        <ActiveSongWrapperStyled>
+                            <ActiveSongImageContainerStyled>
+                                <img src={pickedSong.songImage} alt="albumImage" />
+                            </ActiveSongImageContainerStyled>
+                            <ActiveSongDetailsStyled>
+                                <p>{pickedSong.songName}</p>
+                                <p>{pickedSong.artist}</p>
+                                {pickedSong.album && <p className="album-name">{pickedSong.album}</p>}
+                            </ActiveSongDetailsStyled>
+                        </ActiveSongWrapperStyled>
+                    </IdentityGroupStyled>
+                </CenterGroupStyled>
+
+                {/* 5. Action Icons */}
+                <ActionGroupStyled>
                     {onToggleFavorite && (
                         <ActiveSongLikeButtonStyled onClick={onToggleFavorite} $isFavorite={isSongFavorite}>
                             {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
                         </ActiveSongLikeButtonStyled>
                     )}
-                </ActiveSongWrapperStyled>
-
-                <audio autoPlay onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleMetaDataLoad} style={{ display: "none" }} ref={audioRef}>
-                    <source src={pickedSong.audioFile} />
-                </audio>
-
-                <AudioControlsContainerStyled>
-                    <AudioControlsWrapperStyled>
-                        <span className="previous-icon">
-                            <BiSkipPrevious onClick={handlePrevious} />
-                        </span>
-                        {isPlaying ? (
-                            <span>
-                                <IoPauseCircleSharp key='pause' onClick={handlePlayPause} />
-                            </span>
-                        ) : (
-                            <span>
-                                <IoPlayCircleSharp key='play' onClick={handlePlayPause} />
-                            </span>
-                        )}
-                        <span className="next-icon">
-                            <BiSkipNext onClick={handleNext} />
-                        </span>
-                    </AudioControlsWrapperStyled>
-
-                    <SongSliderContainerStyled>
-                        {audioMetaData && (
-                            <>
-                                <p>{currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds}</p>
-                                <ProgressBarContainerStyled ref={songBarRef} onClick={handleProgressBarClick}>
-                                    <ProgressBarStyled ref={progressBarRef}></ProgressBarStyled>
-                                </ProgressBarContainerStyled>
-                                <p>{duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}</p>
-                            </>
-                        )}
-                    </SongSliderContainerStyled>
-
-                </AudioControlsContainerStyled>
-
-                <VolumeControlContainerStyled>
-                    <span className="react-icon" onClick={handleMuteToggle} style={{ cursor: 'pointer' }}>
-                        {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
+                    <span><MdAddCircleOutline /></span>
+                    
+                    <span style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', marginLeft: '10px', paddingLeft: '15px' }}>
+                        <MdOpenInFull />
                     </span>
-                    <VolumeControlBarStyled ref={volumeControlBarRef} onClick={handleVolumeChange}>
-                        <VolumeChangeStyled ref={volumeChangeRef}></VolumeChangeStyled>
-                    </VolumeControlBarStyled>
-                </VolumeControlContainerStyled>
+                </ActionGroupStyled>
             </AudioPlayerWrapperStyled>
         </AudioPlayerContainerStyled>
     )

@@ -1,22 +1,23 @@
 import styled from 'styled-components';
+import { SongSliderContainerStyled } from './audioControls.styled';
 
 export const AudioPlayerContainerStyled = styled.div`
-  width: calc(100% - 220px);
+  width: 100%;
   height: 90px;
   background-color: #121212;
   position: fixed;
   bottom: 0;
-  left: 220px;
+  left: 0;
   color: white;
-  z-index: 999;
+  z-index: 9999;
   padding: 0;
   box-sizing: border-box;
   display: flex;
   align-items: center;
 
   @media (max-width: 768px) {
-    width: calc(100% - 200px);
-    left: 200px;
+    width: 100%;
+    left: 0;
   }
 
   @media (max-width: 480px) {
@@ -31,42 +32,121 @@ export const AudioPlayerContainerStyled = styled.div`
 export const AudioPlayerWrapperStyled = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 25px;
+  justify-content: space-between;
+  gap: 30px; /* Base horizontal spacing between functional groups */
   height: 100%;
   width: 100%;
-  padding: 0 20px;
+  padding: 0 40px;
 
-  @media (max-width: 480px) {
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px;
-    height: auto;
-    padding: 0;
+  @media (max-width: 1200px) {
+    gap: 20px;
+    padding: 0 20px;
   }
+
+  @media (max-width: 1024px) {
+    gap: 15px;
+    padding: 0 15px;
+  }
+`
+
+export const PlaybackControlsGroupStyled = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 250px;
+  flex-shrink: 0;
+
+  @media (max-width: 1024px) {
+    width: auto;
+    gap: 10px;
+  }
+`
+
+export const CenterGroupStyled = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 20px;
+  min-width: 0;
+
+  & > ${SongSliderContainerStyled} {
+    flex: 1;
+    max-width: 450px; /* Reduced from 650px to make the bar 'a bit small' */
+    margin: 0;
+  }
+
+  @media (max-width: 1200px) {
+    gap: 15px;
+    & > ${SongSliderContainerStyled} {
+      max-width: 500px;
+    }
+  }
+`
+
+export const IdentityGroupStyled = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
 `
 
 export const ActiveSongWrapperStyled = styled.div`
     display: flex;
     align-items: center;
-    width: 240px;
+    width: auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: auto;
+    max-width: 300px;
     height: 70px;
     flex-shrink: 0;
-    overflow: hidden;
     margin: 0;
 
-    @media (max-width: 768px) {
-      width: 200px;
+    @media (max-width: 1200px) {
+      max-width: 250px;
     }
 
-    @media (max-width: 480px) {
-      width: 100%;
-      height: auto;
-      order: 1;
-      margin-bottom: 8px;
-      overflow: visible;
+    @media (max-width: 768px) {
+      display: none; // Hide in small screens to save space for controls
     }
 `;
+
+export const ActionGroupStyled = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+    color: #b3b3b3;
+
+    > span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            color: white;
+            transform: scale(1.1);
+        }
+
+        &.active {
+            color: #f83821;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        gap: 10px;
+        > span {
+            font-size: 18px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        display: none;
+    }
+`
 
 export const ActiveSongImageContainerStyled = styled.div`
   width: 60px;
@@ -74,9 +154,9 @@ export const ActiveSongImageContainerStyled = styled.div`
   flex-shrink: 0;
 
   > img {
-    border-radius: 5px;
-    width: 100%;
-    height: 100%;
+    border-radius: 4px;
+    width: 50px; /* Smaller, cleaner square */
+    height: 50px;
     object-fit: cover;
   }
 
@@ -87,7 +167,7 @@ export const ActiveSongImageContainerStyled = styled.div`
 `;
 
 export const ActiveSongDetailsStyled = styled.div`
-  margin-left: 12px;
+  margin-left: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -104,12 +184,16 @@ export const ActiveSongDetailsStyled = styled.div`
   }
 
   > p:nth-child(2) {
-    font-size: 11px;
-    color: #b3b2b2;
+    font-size: 12px;
+    color: #b3b3b3;
     margin: 2px 0 0 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  }
+
+  .album-name {
+    font-size: 12px;
+    color: #888;
+    margin: 1px 0 0 0;
+    font-weight: 300;
   }
 
   @media (max-width: 480px) {

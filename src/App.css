@@ -1,126 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 * {
   box-sizing: border-box;
 }
 
-body{
+body {
   margin: 0;
-  background-color: #0E0E0E;
+  background-color: #000000; /* Solid black per Spotify */
+  color: white;
+  overflow-x: hidden;
 }
 
-#root{
-  font-family: 'Poppins', sans-serif;
-  background-color: #0E0E0E;
+#root {
+  font-family: 'Inter', sans-serif;
+  background-color: #000000;
   width: 100%;
   min-height: 100vh;
 }
 
-.App{
+.App {
   display: flex;
   flex-direction: row;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
 
-.app-comp-wrap{
+.app-comp-wrap {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 100px;
+  padding-bottom: 120px; /* Space for the audio player */
+  background: linear-gradient(to bottom, #121212 0%, #000000 100%); /* Subtle depth */
 }
 
-.home-topbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px 24px 0;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.profile-menu {
-  position: relative;
-}
-
-.profile-trigger {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 999px;
-  color: #f2f2f2;
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  padding: 8px 14px;
-  cursor: pointer;
-}
-
-.profile-trigger svg {
-  font-size: 20px;
-}
-
-.profile-dropdown {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  min-width: 170px;
-  background: #141414;
-  border: 1px solid #2b2b2b;
-  border-radius: 10px;
-  padding: 6px;
-  z-index: 50;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-}
-
-.profile-action {
-  width: 100%;
-  text-align: left;
-  border: none;
-  border-radius: 6px;
+::-webkit-scrollbar-track {
   background: transparent;
-  color: #ededed;
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  padding: 10px;
-  cursor: pointer;
 }
 
-.profile-action:hover {
-  background: #222;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
-.profile-action.logout {
-  color: #ff5a5a;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* Tablet & Smaller Screen Support */
+/* Responsive Overrides */
 @media (max-width: 768px) {
   .App {
     flex-direction: column;
   }
 
   .app-comp-wrap {
-    margin-top: 60px;
-    padding-bottom: 110px;
-  }
-
-  .home-topbar {
-    padding: 12px 16px 0;
+    margin-top: 0;
+    padding-bottom: 140px;
   }
 }
 
-/* Mobile Support */
 @media (max-width: 480px) {
-  .App {
-    flex-direction: column;
-  }
-
   .app-comp-wrap {
-    margin-top: 60px;
-    padding-bottom: 140px;
-  }
-
-  .profile-trigger span {
-    display: none;
+    padding-bottom: 200px;
   }
 }

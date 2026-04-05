@@ -1,13 +1,17 @@
-import { styled } from "styled-components";
+import { styled, keyframes } from "styled-components";
+import { SongSliderContainerStyled } from '../Audio-Player/audioControls.styled';
 
 export const NavContainerStyled = styled.div`
-  position: fixed;
-  height: 100%;
-  width: ${props => props.$collapsed ? '84px' : '220px'};
-  background-color: #121212;
+  position: relative;
+  height: 100vh;
+  width: ${props => props.$collapsed ? '84px' : '280px'}; /* Slightly wider for library items */
+  background-color: #000000; /* Solid black sidebar per Spotify style */
   overflow-y: auto;
   z-index: 1000;
-  transition: width 0.25s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 
   @media (max-width: 768px) {
     width: ${props => props.$collapsed ? '78px' : '200px'};
@@ -31,23 +35,65 @@ export const NavContainerStyled = styled.div`
 
 export const NavHeadStyled = styled.div`
     display: flex;
+    flex-direction: column;
+    align-items: ${props => props.$collapsed ? 'center' : 'flex-start'};
+    padding: 24px;
+    gap: 15px;
     color: white;
-    align-items: center;
 
     @media (max-width: 480px) {
-      width: 100%;
+      flex-direction: row;
       justify-content: space-between;
       height: 60px;
       padding: 0 15px;
-      flex-shrink: 0;
+      align-items: center;
     }
 `
 
-export const AppLogoContainerStyled = styled.div`
-  height: 80px;
-  width: 80px;
+export const SidebarToggleStyled = styled.button`
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  color: #b3b3b3;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+`
+
+const rotate = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+export const AppLogoContainerStyled = styled.div`
+  height: ${props => props.$collapsed ? '40px' : '55px'};
+  width: ${props => props.$collapsed ? '40px' : '55px'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
 
   &:hover {
     transform: scale(1.05);
@@ -56,27 +102,20 @@ export const AppLogoContainerStyled = styled.div`
   > img{
     height: 100%;
     width: 100%;
-    animation: spin 5s linear infinite;
-  }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+    object-fit: contain;
+    animation: ${rotate} 8s linear infinite;
   }
 
   @media (max-width: 480px) {
-    height: 50px;
-    width: 50px;
+    height: 40px;
+    width: 40px;
   }
 `
 
 export const AppNameContainerStyled = styled.div`
-  margin: 15px 0 0 0;
-  font-family: 'Dela Gothic One', sans-serif;
+  margin-top: 2px;
+  font-family: 'Inter', sans-serif; /* Clean font per Spotify style */
+  font-weight: 700;
   cursor: pointer;
   transition: color 0.2s ease;
   display: ${props => props.$collapsed ? 'none' : 'block'};
@@ -87,10 +126,16 @@ export const AppNameContainerStyled = styled.div`
 
   > p:nth-child(1) {
     margin: 0;
+    font-size: 1.4rem;
+    line-height: 1.1;
+    letter-spacing: -1px;
   }
 
   > p:nth-child(2) {
-    margin: -10px 0  0 0;
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.6;
+    text-transform: uppercase;
   }
 
   @media (max-width: 480px) {
@@ -98,20 +143,111 @@ export const AppNameContainerStyled = styled.div`
   }
 `
 
-export const EdgeHandleStyled = styled.div`
-  position: absolute;
+export const TopNavContainerStyled = styled.nav`
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 16px 32px;
+  height: 80px;
+  width: 100%;
+  background-color: rgba(18, 18, 18, 0.98);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  position: sticky;
   top: 0;
-  right: 0;
-  width: 14px;
-  height: 100%;
-  cursor: ew-resize;
-  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
-  @media (max-width: 480px) {
-    display: none;
+  @media (max-width: 768px) {
+    padding: 12px 20px;
+    height: 70px;
   }
-`
+`;
 
+export const TopNavLinksStyled = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 24px;
+`;
+
+export const NavPillStyled = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: ${props => props.$isActive ? '#282828' : 'transparent'};
+  border: ${props => props.children[1].props.children === 'Upload' ? '1px solid #f83821' : 'none'};
+  border-radius: 30px; /* more rounded pill */
+  padding: 12px 24px; /* increased padding for premium feel */
+  color: ${props => props.$isActive ? 'white' : props.children[1].props.children === 'Upload' ? '#f83821' : '#b3b3b3'};
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${props => props.$isActive ? '#3e3e3e' : props.children[1].props.children === 'Upload' ? 'rgba(248, 56, 33, 0.1)' : 'rgba(255,255,255,0.12)'}; /* subtle hover */
+    color: white;
+    transform: scale(1.02);
+  }
+
+  .icon {
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    font-size: 13px;
+    .icon { font-size: 20px; }
+  }
+`;
+
+export const SearchInputPillStyled = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #282828;
+  border-radius: 30px;
+  padding: 10px 20px;
+  color: white;
+
+  input {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    width: 200px;
+    &::placeholder {
+      color: #b3b3b3;
+      font-weight: 400;
+    }
+  }
+
+  .icon {
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    color: white;
+  }
+`;
+export const SideNavHeaderStyled = styled.p`
+  color: #b3b3b3;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize; /* Spotify uses 'My Library' with caps */
+  padding: 24px 24px 8px 24px;
+  margin: 0;
+  display: ${props => props.$collapsed ? 'none' : 'flex'};
+  opacity: 0.8;
+  align-items: center;
+  gap: 12px;
+
+  svg { font-size: 24px; }
+`;
+
+/* Reuse existing hamburger styles for mobile compatibility */
 export const HamburgerMenuStyled = styled.button`
   display: none;
   flex-direction: column;
@@ -137,36 +273,14 @@ export const HamburgerLineStyled = styled.span`
   border-radius: 2px;
   transition: all 0.3s ease;
   display: block;
-  position: relative;
-  transform-origin: center;
+`;
 
-  /* First line */
-  &:nth-child(1) {
-    transform: ${props => props.$menuOpen ? 'rotate(45deg) translateY(15px)' : 'rotate(0deg) translateY(0px)'};
-
-    ${HamburgerMenuStyled}:hover & {
-      transform: rotate(45deg) translateY(15px);
-      background-color: #f83821;
-    }
-  }
-
-  /* Middle line */
-  &:nth-child(2) {
-    opacity: ${props => props.$menuOpen ? '0' : '1'};
-
-    ${HamburgerMenuStyled}:hover & {
-      opacity: 0;
-      background-color: #f83821;
-    }
-  }
-
-  /* Third line */
-  &:nth-child(3) {
-    transform: ${props => props.$menuOpen ? 'rotate(-45deg) translateY(-15px)' : 'rotate(0deg) translateY(0px)'};
-
-    ${HamburgerMenuStyled}:hover & {
-      transform: rotate(-45deg) translateY(-15px);
-      background-color: #f83821;
-    }
-  }
+export const EdgeHandleStyled = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 14px;
+  height: 100%;
+  cursor: ew-resize;
+  background: transparent;
 `

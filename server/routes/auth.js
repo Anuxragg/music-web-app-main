@@ -1,15 +1,43 @@
 const express = require('express');
-const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
-// Public routes
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/refresh-token', authController.refreshToken);
+const router = express.Router();
+
+const validate = (req, res, next) => {
+	const errors = validationResult(req);
+	if (!errors.isEmpty()) {
+		return res.status(400).json({ success: false, errors: errors.array() });
+	}
+	return next();
+};
+
+router.post(
+	'/register',
+	[
+		body('username').trim().isLength({ min: 3 }),
+		body('email').isEmail(),
+		body('password').isLength({ min: 6 }),
+	],
+	validate,
+	authController.register
+);
+
+router.post(
+	'/login',
+	[
+		body('email').isEmail(),
+		body('password').isLength({ min: 6 }),
+	],
+	validate,
+	authController.login
+);
+
+router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
+router.get('/me', protect, authController.getMe);
+router.get('/session', authController.getSession);
 
-// Protected routes
-router.get('/session', authMiddleware, authController.session);
 
 module.exports = router;

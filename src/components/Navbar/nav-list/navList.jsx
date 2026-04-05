@@ -1,16 +1,16 @@
 /* eslint-disable react/prop-types */
-import { GoHome } from "react-icons/go";
-import { MdOutlineExplore } from "react-icons/md";
-import { MdOutlineFavoriteBorder } from "react-icons/md";
-import { TbPlaylist } from "react-icons/tb";
-import { NavListContainerStyled, NavListStyled, UserPlaylistContainerStyled, UserPlaylistHeadingStyled, UserPlayListWrapperStyled, UserPlaylistStyled } from "./navList.styled";
+import { VscLibrary } from "react-icons/vsc";
+import { MdOutlineFavoriteBorder, MdPlaylistPlay, MdPersonOutline, MdAlbum } from "react-icons/md";
+import { NavListContainerStyled, NavListStyled } from "./navList.styled";
+import { SideNavHeaderStyled } from "../navbar.styled";
 
 export default function NavList({ menuOpen = false, collapsed = false, currentView, setCurrentView }) {
 
-    const navListItems = [
-        { icon: <GoHome />, text: 'Home' },
-        { icon: <MdOutlineExplore />, text: 'Explore' },
-        { icon: <MdOutlineFavoriteBorder />, text: 'Favorites' },
+    const libraryItems = [
+        { icon: <MdPlaylistPlay />, text: 'Playlists' },
+        { icon: <MdOutlineFavoriteBorder />, text: 'Liked Songs' },
+        { icon: <MdAlbum />, text: 'Albums' },
+        { icon: <MdPersonOutline />, text: 'Artists' },
     ];
 
     const handleNavClick = (viewName) => {
@@ -20,7 +20,7 @@ export default function NavList({ menuOpen = false, collapsed = false, currentVi
     return (
         <>
             <NavListContainerStyled $menuOpen={menuOpen} $collapsed={collapsed}>
-                {navListItems.map((item, index) => (
+                {libraryItems.map((item, index) => (
                     <NavListStyled
                         key={index}
                         $collapsed={collapsed}
@@ -34,23 +34,6 @@ export default function NavList({ menuOpen = false, collapsed = false, currentVi
                     </NavListStyled>
                 ))}
             </NavListContainerStyled>
-
-            <UserPlaylistContainerStyled $menuOpen={menuOpen} $collapsed={collapsed}>
-                <UserPlaylistHeadingStyled>
-                    <p>Your Playlist</p>
-                </UserPlaylistHeadingStyled>
-
-                <UserPlayListWrapperStyled>
-                    {['userPlaylist1', 'userPlaylist2', 'userPlaylist3'].map(ele => {
-                        return (
-                            <UserPlaylistStyled key={ele}>
-                                <span className="react-icon"><TbPlaylist /></span>
-                                <p>{ele}</p>
-                            </UserPlaylistStyled>
-                        )
-                    })}
-                </UserPlayListWrapperStyled>
-            </UserPlaylistContainerStyled>
         </>
     )
 }
