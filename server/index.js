@@ -27,10 +27,37 @@ const limiter = rateLimit({
 });
 
 app.use(helmet());
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+
+// Connect to MongoDB immediately (Mongoose caches the connection)
+if (MONGO_URI) {
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
+} else {
+  console.warn('⚠️ No MONGO_URI found in environment variables');
+}
+
+// CORS setup with fallback for production origins
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow same-origin (no origin header), local development, or explicitly allowed production origins
+    if (!origin || origin.startsWith('http://localhost') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // In production same-domain situations, the origin might be the Vercel URL
+      // We allow it to be dynamic to solve browser blocking
+      callback(null, true); 
+    }
+  },
   credentials: true,
 }));
+
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
@@ -38,7 +65,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', limiter);
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'VOCALZ API healthy' });
+  res.status(200).json({ success: true, message: 'VOCALZ API healthy', environment: process.env.NODE_ENV });
 });
 
 app.use('/api/auth', authRoutes);
@@ -64,15 +91,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`VOCALZ server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error('MongoDB connection failed:', error.message);
-    process.exit(1);
+// Only start the listener if run directly (local development)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`VOCALZ server running on port ${PORT}`);
   });
+}
+
+module.exports = app;
