@@ -29,14 +29,47 @@ const limiter = rateLimit({
 app.use(helmet());
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
-// Connect to MongoDB immediately (Mongoose caches the connection)
-if (MONGO_URI) {
-  mongoose.connect(MONGO_URI)
-    .then(() => console.log('✅ MongoDB Connected'))
-    .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
-} else {
-  console.warn('⚠️ No MONGO_URI found in environment variables');
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
+
+async function connectToDatabase() {
+  if (!MONGO_URI) {
+    console.warn('⚠️ No MONGO_URI found in environment variables');
+    return;
+  }
+  
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGO_URI).then((mongoose) => {
+      console.log('✅ MongoDB Connected (Serverless)');
+      return mongoose;
+    }).catch(err => {
+      console.error('❌ MongoDB Connection Error:', err.message);
+      cached.promise = null;
+      throw err;
+    });
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+// Ensure database connection is established before handling any API request
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    try {
+      await connectToDatabase();
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+  }
+  next();
+});
 
 // CORS setup with fallback for production origins
 const allowedOrigins = [
