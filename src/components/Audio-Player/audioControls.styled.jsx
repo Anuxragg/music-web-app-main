@@ -36,8 +36,14 @@ export const MainPlayButtonStyled = styled.div`
         background-color: #ff4a36;
     }
 
-    &:active {
+  &:active {
         transform: scale(0.95);
+    }
+
+    @media (max-width: 480px) {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
     }
 `
 
@@ -58,6 +64,14 @@ export const ControlIconStyled = styled.span`
 
     &.prev-next {
         font-size: 28px;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 16px;
+        padding: 4px;
+        &.prev-next {
+            font-size: 22px;
+        }
     }
 `
 
@@ -143,11 +157,11 @@ export const SongSliderContainerStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    gap: 6px;
+    gap: 4px;
 
     > p {
       font-size: 10px;
-      min-width: 30px;
+      min-width: 28px;
     }
   }
 `
@@ -175,6 +189,11 @@ export const ProgressBarContainerStyled = styled.div`
 
   @media (max-width: 768px) {
     width: 140px;
+  }
+
+  @media (max-width: 480px) {
+    width: auto;
+    min-width: 60px;
   }
 `
 

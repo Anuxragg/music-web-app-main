@@ -23,9 +23,9 @@ export const AudioPlayerContainerStyled = styled.div`
   @media (max-width: 480px) {
     width: 100%;
     left: 0;
-    height: auto;
-    min-height: 100px;
-    padding: 10px 15px;
+    height: 70px;
+    min-height: 70px;
+    padding: 0 5px;
   }
 `;
 
@@ -47,6 +47,11 @@ export const AudioPlayerWrapperStyled = styled.div`
     gap: 15px;
     padding: 0 15px;
   }
+
+  @media (max-width: 480px) {
+    gap: 5px;
+    padding: 0 5px;
+  }
 `
 
 export const PlaybackControlsGroupStyled = styled.div`
@@ -59,6 +64,10 @@ export const PlaybackControlsGroupStyled = styled.div`
   @media (max-width: 1024px) {
     width: auto;
     gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 4px;
   }
 `
 
@@ -81,6 +90,10 @@ export const CenterGroupStyled = styled.div`
     & > ${SongSliderContainerStyled} {
       max-width: 500px;
     }
+  }
+
+  @media (max-width: 480px) {
+    gap: 5px;
   }
 `
 

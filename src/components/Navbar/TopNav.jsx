@@ -69,7 +69,7 @@ export default function TopNav({ currentView, setCurrentView, onSearch }) {
                 {navItems.map((item) => {
                     if (item.id === 'Search' && currentView === 'Search') {
                         return (
-                            <SearchInputPillStyled key={item.id} style={{ marginLeft: '24px' }}>
+                            <SearchInputPillStyled key={item.id}>
                                 <span className="icon"><IoSearchOutline /></span>
                                 <input 
                                     type="text" 
@@ -86,7 +86,6 @@ export default function TopNav({ currentView, setCurrentView, onSearch }) {
                             key={item.id}
                             $isActive={currentView === item.id}
                             onClick={() => setCurrentView(item.id)}
-                            style={{ marginLeft: item.id === 'Search' ? '24px' : item.id === 'Discover' ? '12px' : '0' }}
                         >
                             <span className="icon">{item.icon}</span>
                             <span className="label">{item.label}</span>

@@ -7,7 +7,7 @@ import { IoPlay, IoPause, IoShuffleOutline, IoRepeatOutline } from "react-icons/
 import { BiSkipNext, BiSkipPrevious } from "react-icons/bi";
 import { MdVolumeUp, MdVolumeMute, MdFavorite, MdFavoriteBorder, MdAddCircleOutline, MdPlaylistAdd, MdDevices, MdQueueMusic, MdMoreHoriz, MdOpenInFull } from "react-icons/md";
 
-export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSongFavorite, onToggleFavorite }) {
+export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSongFavorite, onToggleFavorite, onNext, onPrevious }) {
 
     const [audioMetaData, setAudioMetaData] = useState(false);
     const [duration, setDuration] = useState(0)
@@ -74,10 +74,10 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
         setIsPlaying(prev => !prev);
     }
     const handleNext = () => {
-        console.log('next clicked')
+        if (onNext) onNext();
     }
     const handlePrevious = () => {
-        console.log('previous clicked')
+        if (onPrevious) onPrevious();
     }
 
     const handleMetaDataLoad = () => {
@@ -151,7 +151,22 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     return (
         <AudioPlayerContainerStyled>
             <AudioPlayerWrapperStyled>
-                <audio onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleMetaDataLoad} style={{ display: "none" }} ref={audioRef}></audio>
+                <audio 
+                    onTimeUpdate={handleTimeUpdate} 
+                    onLoadedMetadata={handleMetaDataLoad} 
+                    onEnded={() => {
+                        if (!isRepeat) {
+                            if (onNext) {
+                                handleNext();
+                            } else {
+                                setIsPlaying(false);
+                            }
+                        }
+                    }}
+                    loop={isRepeat}
+                    style={{ display: "none" }} 
+                    ref={audioRef}
+                ></audio>
 
                 {/* 1. Playback Controls (Pinned Left) */}
                 <PlaybackControlsGroupStyled>
@@ -192,7 +207,7 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
                         <span className="react-icon" onClick={handleMuteToggle}>
                             {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
                         </span>
-                        <VolumeControlBarStyled volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50} ref={volumeControlBarRef} onClick={handleVolumeChange}>
+                        <VolumeControlBarStyled $volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50} ref={volumeControlBarRef} onClick={handleVolumeChange}>
                             <VolumeChangeStyled ref={volumeChangeRef}></VolumeChangeStyled>
                         </VolumeControlBarStyled>
                     </VolumeControlContainerStyled>

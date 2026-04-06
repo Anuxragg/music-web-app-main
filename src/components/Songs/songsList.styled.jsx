@@ -397,6 +397,13 @@ export const AlbumActionsRowStyled = styled.div`
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+  
+  @media (max-width: 480px) {
+    gap: 12px;
+  }
   
   .play-btn {
     width: 56px;
@@ -410,6 +417,7 @@ export const AlbumActionsRowStyled = styled.div`
     color: white;
     font-size: 24px;
     border: none;
+    flex-shrink: 0;
     transition: transform 0.2s, background-color 0.2s;
     
     &:hover {
@@ -427,6 +435,7 @@ export const AlbumActionsRowStyled = styled.div`
     transition: color 0.2s;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     
     &:hover {
       color: white;

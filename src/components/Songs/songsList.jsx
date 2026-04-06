@@ -17,6 +17,7 @@ import UploadSongs from './upload';
 export default function SongsList({ user, favorites, setFavorites, currentView, setCurrentView, searchResults }) {
 
     const [clickedSong, setClickedSong] = useState(null);
+    const [playingPlaylist, setPlayingPlaylist] = useState([]);
     const [isPlaying, setIsPlaying] = useState(true);
     const [selectedArtist, setSelectedArtist] = useState(null);
     const [selectedGenre, setSelectedGenre] = useState(null);
@@ -68,11 +69,12 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         }
     }, [currentView]);
 
-    const handleSongClick = (song) => {
+    const handleSongClick = (song, contextPlaylist) => {
         setClickedSong(song);
-        if (!isPlaying) {
-            setIsPlaying(isPlaying => !isPlaying)
+        if (contextPlaylist) {
+            setPlayingPlaylist(contextPlaylist);
         }
+        setIsPlaying(true);
     }
 
     const handleLikeClick = async (e, songId) => {
@@ -176,18 +178,40 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         );
     }
 
+    const handleNext = () => {
+        const activeList = playingPlaylist.length > 0 ? playingPlaylist : displayedSongs;
+        const currentIndex = activeList.findIndex(s => s.id === clickedSong?.id);
+        if (currentIndex !== -1) {
+            const nextIndex = currentIndex + 1 >= activeList.length ? 0 : currentIndex + 1;
+            setClickedSong(activeList[nextIndex]);
+            setIsPlaying(true);
+        }
+    };
+
+    const handlePrevious = () => {
+        const activeList = playingPlaylist.length > 0 ? playingPlaylist : displayedSongs;
+        const currentIndex = activeList.findIndex(s => s.id === clickedSong?.id);
+        if (currentIndex !== -1) {
+            const prevIndex = currentIndex - 1 < 0 ? activeList.length - 1 : currentIndex - 1;
+            setClickedSong(activeList[prevIndex]);
+            setIsPlaying(true);
+        }
+    };
+
     return (
         <SongsListWrapperStyled>
             {!isHomeView && <ViewHeadingStyled>{heading}</ViewHeadingStyled>}
             
             {isHomeView && !loading ? (
                 <>
-                    <ViewHeadingStyled style={{ fontSize: '24px', marginBottom: '15px' }}>Top Songs <span>&gt;</span></ViewHeadingStyled>
+                    <ViewHeadingStyled style={{ fontSize: '24px', marginBottom: '15px' }}>Top Songs</ViewHeadingStyled>
                     <TopSongsGridStyled>
                         {liveSongs.slice(0, 10).map((song, index) => (
-                            <SongContainerStyled key={song.id} onClick={() => { handleSongClick(song) }}>
+                            <SongContainerStyled key={song.id} onClick={() => { handleSongClick(song, liveSongs.slice(0, 10)) }}>
                                 <SongDetailsContainerStyled>
-                                    <SongIndexStyled>{index + 1}</SongIndexStyled>
+                                    <SongIndexStyled>
+                                        {clickedSong?.id === song.id ? <IoPlay style={{ color: '#f83821', fontSize: '18px' }} /> : index + 1}
+                                    </SongIndexStyled>
                                     <SongImgContainerStyled>
                                         <img src={song.songImage} alt="albumImage" />
                                     </SongImgContainerStyled>
@@ -209,7 +233,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                         ))}
                     </TopSongsGridStyled>
 
-                    <ViewHeadingStyled style={{ fontSize: '24px', marginTop: '40px', marginBottom: '15px' }}>Music Albums <span>&gt;</span></ViewHeadingStyled>
+                    <ViewHeadingStyled style={{ fontSize: '24px', marginTop: '40px', marginBottom: '15px' }}>Music Albums</ViewHeadingStyled>
                     <AlbumsScrollContainerStyled>
                         {Array.from(new Set(liveSongs.map(s => s.artist))).slice(0, 8).map(artist => {
                             const artistSong = liveSongs.find(s => s.artist === artist);
@@ -238,7 +262,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     </div>
                                 </AlbumHeaderInfoStyled>
                                 <AlbumActionsRowStyled>
-                                    <button className="play-btn" onClick={() => handleSongClick(albumSongs[0])}>
+                                    <button className="play-btn" onClick={() => handleSongClick(albumSongs[0], albumSongs)}>
                                         <IoPlay style={{ marginLeft: '3px' }} />
                                     </button>
                                     <button className="icon-action"><IoShuffleOutline /></button>
@@ -255,9 +279,11 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     <span style={{textAlign: 'right', paddingRight: '40px'}}>Duration</span>
                                 </AlbumTracklistHeaderStyled>
                                 {albumSongs.map((song, index) => (
-                                    <SongContainerStyled key={song.id} onClick={() => { handleSongClick(song) }} style={{backgroundColor: 'transparent', height: '50px', borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                                    <SongContainerStyled key={song.id} onClick={() => { handleSongClick(song, albumSongs) }} style={{backgroundColor: 'transparent', height: '50px', borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
                                         <SongDetailsContainerStyled>
-                                            <SongIndexStyled style={{width: '20px'}}>{index + 1}</SongIndexStyled>
+                                            <SongIndexStyled style={{width: '20px'}}>
+                                                {clickedSong?.id === song.id ? <IoPlay style={{ color: '#f83821', fontSize: '18px' }} /> : index + 1}
+                                            </SongIndexStyled>
                                             <SongNameArtistStyled style={{marginLeft: '0'}}>
                                                 <p>{song.songName}</p>
                                                 <p>{song.artist}</p>
@@ -340,7 +366,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 </p>
             ) : (
                 displayedSongs.map(song => (
-                    <SongContainerStyled key={song.id} onClick={() => { handleSongClick(song) }}>
+                    <SongContainerStyled key={song.id} onClick={() => { handleSongClick(song, displayedSongs) }}>
                         <SongDetailsContainerStyled>
                             <SongImgContainerStyled>
                                 <img src={song.songImage} alt="albumImage" />
@@ -369,6 +395,8 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                     setIsPlaying={setIsPlaying}
                     isSongFavorite={isFavorite(clickedSong.id)}
                     onToggleFavorite={() => handleLikeClick({ stopPropagation: () => {} }, clickedSong.id)}
+                    onNext={handleNext}
+                    onPrevious={handlePrevious}
                 />
                 ) : (
                     <AudioPlayer />)}

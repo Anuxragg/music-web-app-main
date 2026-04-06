@@ -161,12 +161,31 @@ export const TopNavContainerStyled = styled.nav`
     padding: 12px 20px;
     height: 70px;
   }
+
+  @media (max-width: 480px) {
+    padding: 10px 15px;
+    height: 60px;
+  }
 `;
 
 export const TopNavLinksStyled = styled.div`
   display: flex;
   align-items: center;
   gap: 24px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    gap: 15px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+  }
 `;
 
 export const NavPillStyled = styled.button`
@@ -181,6 +200,7 @@ export const NavPillStyled = styled.button`
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 
   &:hover {
@@ -200,6 +220,16 @@ export const NavPillStyled = styled.button`
     font-size: 13px;
     .icon { font-size: 20px; }
   }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 6px;
+    .icon { font-size: 18px; }
+    .label {
+      display: ${props => props.$isActive ? 'block' : 'none'};
+    }
+  }
 `;
 
 export const SearchInputPillStyled = styled.div`
@@ -210,6 +240,7 @@ export const SearchInputPillStyled = styled.div`
   border-radius: 30px;
   padding: 10px 20px;
   color: white;
+  flex-shrink: 0;
 
   input {
     background: transparent;
@@ -230,6 +261,18 @@ export const SearchInputPillStyled = styled.div`
     display: flex;
     align-items: center;
     color: white;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    gap: 6px;
+    input {
+      width: 120px; /* Smaller width for mobile */
+      font-size: 13px;
+    }
+    .icon {
+      font-size: 18px;
+    }
   }
 `;
 export const SideNavHeaderStyled = styled.p`
