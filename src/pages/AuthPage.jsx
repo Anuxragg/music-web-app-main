@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled, { keyframes, createGlobalStyle } from 'styled-components';
-import { useAuth } from '../context/AuthContext';
- 
-const Fonts = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
-`;
- 
+import styled, { keyframes } from 'styled-components';
+import { useAuth } from '../context/AuthContext'; 
 const scrollDiagonal = keyframes`
   from { transform: translateY(0); }
   to   { transform: translateY(-50%); }
@@ -265,7 +260,6 @@ export default function AuthPage() {
  
   return (
     <>
-      <Fonts />
  
       <GridBg>
         {SPEEDS.map((speed, ci) => (
