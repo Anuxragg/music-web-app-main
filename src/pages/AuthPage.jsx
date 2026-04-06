@@ -219,6 +219,8 @@ export default function AuthPage() {
  
   const validate = () => {
     if (!form.email.trim()) { setError('Email is required.'); return false; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) { setError('Please enter a valid email address.'); return false; }
     if (!form.password)     { setError('Password is required.'); return false; }
     if (isRegister) {
       if (!form.username.trim())                  { setError('Username is required.'); return false; }

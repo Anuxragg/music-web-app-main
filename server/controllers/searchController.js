@@ -10,7 +10,10 @@ exports.searchAll = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Query is required' });
     }
 
-    const regex = new RegExp(q, 'i');
+    // Escape regex characters to prevent errors
+    const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Use word boundary \b to match the start of any word, preventing "sta" from matching "Nostalgia"
+    const regex = new RegExp('\\b' + escapedQ, 'i');
 
     const [songs, artists, albums, playlists] = await Promise.all([
       Song.find({ $or: [{ title: regex }, { artist: regex }, { genre: regex }, { albumText: regex }], isPublic: true }).limit(12),

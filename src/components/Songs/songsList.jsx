@@ -17,6 +17,10 @@ import UploadSongs from './upload';
 export default function SongsList({ user, favorites, setFavorites, currentView, setCurrentView, searchResults }) {
 
     const [clickedSong, setClickedSong] = useState(null);
+    const [recentHistory, setRecentHistory] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('vocalz_history')) || []; }
+        catch { return []; }
+    });
     const [playingPlaylist, setPlayingPlaylist] = useState([]);
     const [isPlaying, setIsPlaying] = useState(true);
     const [selectedArtist, setSelectedArtist] = useState(null);
@@ -75,6 +79,11 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             setPlayingPlaylist(contextPlaylist);
         }
         setIsPlaying(true);
+        setRecentHistory(prev => {
+            const newHist = [song.id, ...prev.filter(id => id !== song.id)].slice(0, 50);
+            localStorage.setItem('vocalz_history', JSON.stringify(newHist));
+            return newHist;
+        });
     }
 
     const handleLikeClick = async (e, songId) => {
@@ -113,6 +122,9 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             audioUrl: song.audioUrl
         }));
         heading = `Search Results (${displayedSongs.length})`;
+    } else if (currentView === 'Listen History') {
+        displayedSongs = recentHistory.map(id => liveSongs.find(song => String(song.id) === String(id))).filter(Boolean);
+        heading = 'Listen History';
     } else if (currentView === 'Liked Songs') {
         displayedSongs = liveSongs.filter(song => favorites.includes(String(song.id)));
     } else if (currentView === 'Artists') {
@@ -352,6 +364,10 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                         </SongContainerStyled>
                     ))
                 )
+            ) : displayedSongs.length === 0 && currentView === 'Listen History' ? (
+                <p style={{ color: '#b3b2b2', marginTop: '20px', fontSize: '14px' }}>
+                    Your play history is empty. Start streaming songs to see them appear here!
+                </p>
             ) : displayedSongs.length === 0 && currentView === 'Liked Songs' ? (
                 <p style={{ color: '#b3b2b2', marginTop: '20px', fontSize: '14px' }}>
                     No favorite songs yet. Click the heart icon on any song to add it to your favorites!
