@@ -7,15 +7,27 @@ import { IoPlay, IoPause, IoShuffleOutline, IoRepeatOutline } from "react-icons/
 import { BiSkipNext, BiSkipPrevious } from "react-icons/bi";
 import { MdVolumeUp, MdVolumeMute, MdFavorite, MdFavoriteBorder, MdAddCircleOutline, MdPlaylistAdd, MdDevices, MdQueueMusic, MdMoreHoriz, MdOpenInFull } from "react-icons/md";
 
-export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSongFavorite, onToggleFavorite, onNext, onPrevious }) {
+export default function AudioPlayer({ 
+    pickedSong, 
+    isPlaying, 
+    setIsPlaying, 
+    isSongFavorite, 
+    onToggleFavorite, 
+    onNext, 
+    onPrevious,
+    isShuffle,
+    setIsShuffle,
+    isRepeat,
+    setIsRepeat
+}) {
 
     const [audioMetaData, setAudioMetaData] = useState(false);
     const [duration, setDuration] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
     const [isMuted, setIsMuted] = useState(false);
-    const [isShuffle, setIsShuffle] = useState(false);
-    const [isRepeat, setIsRepeat] = useState(false);
     const [previousVolume, setPreviousVolume] = useState(0.5);
+    const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+    const [isDraggingProgress, setIsDraggingProgress] = useState(false);
     const audioRef = useRef(null);
     const progressBarRef = useRef(null);
     const songBarRef = useRef(null);
@@ -100,33 +112,68 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
     }
 
     const handleProgressBarClick = (e) => {
-        const clickPosition = e.pageX - songBarRef.current.getBoundingClientRect().left;
-        const clickPositionInPercent = (clickPosition / songBarRef.current.offsetWidth) * 100;
-
-        //we get one percentage of seconds of current song from its total duration by dividing it with 100
-        //we multiply it with the clicked position percentage of progress bar to get the seconds of song at clicked position
-        const clickTimeInSeconds = (audioRef.current.duration / 100) * clickPositionInPercent;
-
-        audioRef.current.currentTime = clickTimeInSeconds;
-        // tho the OnTimeUpdateEvent event calls the below function on every current time change
-        // calling the time update handling function on progress bar click so that there is no delay in updating the UI
-        handleTimeUpdate();
+        handleProgressBarUpdate(e);
     }
 
     const handleVolumeChange = (e) => {
-        const volumeClickPosition = e.pageX - volumeControlBarRef.current.getBoundingClientRect().left;
-        const volumeChangeInPercentage = (volumeClickPosition / volumeControlBarRef.current.offsetWidth) * 100;
+        if (!volumeControlBarRef.current) return;
+        const rect = volumeControlBarRef.current.getBoundingClientRect();
+        const volumeClickPosition = e.pageX - rect.left;
+        const volumeChangeInPercentage = Math.max(0, Math.min(100, (volumeClickPosition / rect.width) * 100));
         const visualVolume = 0.01 * volumeChangeInPercentage;
 
         // Square the visual volume to simulate logarithmic audio perception
         const actualVolume = visualVolume * visualVolume;
 
         audioRef.current.volume = actualVolume;
-        volumeChangeRef.current.style.width = `${volumeChangeInPercentage}%`
+        if (volumeChangeRef.current) {
+            volumeChangeRef.current.style.width = `${volumeChangeInPercentage}%`;
+        }
         if (actualVolume > 0 && isMuted) {
             setIsMuted(false);
         }
     }
+
+    const handleProgressBarUpdate = (e) => {
+        if (!songBarRef.current || !audioRef.current) return;
+        const rect = songBarRef.current.getBoundingClientRect();
+        const clickPosition = e.pageX - rect.left;
+        const clickPositionInPercent = Math.max(0, Math.min(100, (clickPosition / rect.width) * 100));
+        const clickTimeInSeconds = (audioRef.current.duration / 100) * clickPositionInPercent;
+
+        audioRef.current.currentTime = clickTimeInSeconds;
+        handleTimeUpdate();
+    }
+
+    // Global drag handlers
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (isDraggingVolume) {
+                handleVolumeChange(e);
+            } else if (isDraggingProgress) {
+                handleProgressBarUpdate(e);
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsDraggingVolume(false);
+            setIsDraggingProgress(false);
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+        };
+
+        if (isDraggingVolume || isDraggingProgress) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'grabbing';
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDraggingVolume, isDraggingProgress]);
 
     const handleMuteToggle = () => {
         if (isMuted) {
@@ -195,8 +242,11 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
                         {audioMetaData && (
                             <>
                                 <p className="current-time">{currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds}</p>
-                                <ProgressBarContainerStyled ref={songBarRef} onClick={handleProgressBarClick}>
-                                    <ProgressBarStyled ref={progressBarRef}></ProgressBarStyled>
+                                <ProgressBarContainerStyled 
+                                    ref={songBarRef} 
+                                    onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e); }}
+                                >
+                                    <ProgressBarStyled ref={progressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
                                 </ProgressBarContainerStyled>
                                 <p className="duration-text">{duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}</p>
                             </>
@@ -207,8 +257,13 @@ export default function AudioPlayer({ pickedSong, isPlaying, setIsPlaying, isSon
                         <span className="react-icon" onClick={handleMuteToggle}>
                             {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
                         </span>
-                        <VolumeControlBarStyled $volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50} ref={volumeControlBarRef} onClick={handleVolumeChange}>
-                            <VolumeChangeStyled ref={volumeChangeRef}></VolumeChangeStyled>
+                        <VolumeControlBarStyled 
+                            $volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50} 
+                            ref={volumeControlBarRef} 
+                            onMouseDown={(e) => { setIsDraggingVolume(true); handleVolumeChange(e); }}
+                            $isDragging={isDraggingVolume}
+                        >
+                            <VolumeChangeStyled ref={volumeChangeRef} $isDragging={isDraggingVolume}></VolumeChangeStyled>
                         </VolumeControlBarStyled>
                     </VolumeControlContainerStyled>
 

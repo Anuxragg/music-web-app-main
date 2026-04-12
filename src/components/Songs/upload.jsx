@@ -1,23 +1,26 @@
 /* eslint-disable react/prop-types */
 import { useState, useRef } from 'react';
+import api from '../../services/api';
 import { 
     UploadContainerStyled, UploadHeaderStyled, ToggleGroupStyled, ToggleBtnStyled, 
     DropZoneStyled, FormGridStyled, InputGroupStyled, CoverUploadStyled, ActionRowStyled 
 } from './upload.styled';
 import { MdCloudUpload, MdImage, MdCheckCircle, MdLibraryMusic, MdAlbum } from 'react-icons/md';
 
-export default function UploadSongs({ user, onCancel }) {
+export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, onDelete, existingAlbums, notify, setGlobalLoading }) {
     const [mode, setMode] = useState('single'); // 'single' or 'album'
     const [file, setFile] = useState(null);
     const [cover, setCover] = useState(null);
-    const [preview, setPreview] = useState(null);
+    const [preview, setPreview] = useState(songToEdit?.coverUrl || null);
     const [metadata, setMetadata] = useState({
-        title: '',
-        artist: user?.username || '',
-        album: '',
-        genre: 'Pop'
+        title: songToEdit?.songName || '',
+        artist: songToEdit?.artist || user?.username || '',
+        album: prefillAlbum || songToEdit?.albumText || '',
+        genre: songToEdit?.genre || 'Pop'
     });
 
+    const [loading, setLoading] = useState(false);
+    
     const fileInputRef = useRef(null);
     const coverInputRef = useRef(null);
 
@@ -40,28 +43,111 @@ export default function UploadSongs({ user, onCancel }) {
     };
 
     const handlePublish = async () => {
-        // Logic for backend upload will go here
-        console.log('Publishing:', { file, cover, metadata, mode });
-        alert('Ready to publish! Connect backend API next.');
+        // If mode is 'single', we MUST have a track file
+        // If mode is 'album', and we HAVE a track file, we upload the track to that album
+        // If mode is 'album', and we DON'T HAVE a track file, we just create the Album shell
+        
+        if (mode === 'single' && !songToEdit && !file) {
+            notify('Please select an audio file first.', 'error');
+            return;
+        }
+
+        if (mode === 'album' && !metadata.album.trim()) {
+            notify('Please enter an Album Name.', 'error');
+            return;
+        }
+
+        if (setGlobalLoading) setGlobalLoading(songToEdit ? 'Updating track details...' : 'Publishing your track to Vocalz...');
+        setLoading(true);
+        try {
+            if (songToEdit) {
+                // Update existing song with FormData to support cover upload
+                const formData = new FormData();
+                formData.append('title', metadata.title);
+                formData.append('artist', metadata.artist);
+                formData.append('genre', metadata.genre);
+                formData.append('albumText', metadata.album || '');
+                if (cover) formData.append('cover', cover);
+
+                await api.patch(`/songs/${songToEdit.id}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                
+                notify('Song updated successfully!');
+                onCancel();
+                window.location.reload();
+                return;
+            }
+
+            // Case 1: Create an empty Album shell (No song file uploaded)
+            if (mode === 'album' && !file) {
+                const formData = new FormData();
+                if (cover) formData.append('cover', cover);
+                formData.append('title', metadata.album); // The album's title
+                formData.append('artist', metadata.artist);
+                formData.append('genre', metadata.genre);
+                
+                const res = await api.post('/albums', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                if (res.data?.success) {
+                    notify('Album shell created! You can now upload songs to this album.');
+                    onCancel();
+                    window.location.reload();
+                }
+                return;
+            }
+
+            // Case 2: Upload a track (and optionally link/create album)
+            const formData = new FormData();
+            formData.append('audio', file);
+            if (cover) formData.append('cover', cover);
+            formData.append('title', metadata.title);
+            formData.append('artist', metadata.artist);
+            formData.append('genre', metadata.genre);
+            formData.append('albumText', metadata.album || '');
+            formData.append('isPublic', 'true');
+
+            const res = await api.post('/songs', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            if (res.data?.success) {
+                notify('Success! Your track is now live on Vocalz.');
+                onCancel(); // Close the upload view
+                window.location.reload(); 
+            }
+        } catch (err) {
+            console.error('Upload error:', err);
+            notify(err.response?.data?.message || 'Failed to process request.', 'error');
+        } finally {
+            setLoading(false);
+            if (setGlobalLoading) setGlobalLoading(null);
+        }
     };
 
     return (
         <UploadContainerStyled>
             <UploadHeaderStyled>
-                <h1>Upload Music</h1>
+                <h1>{songToEdit ? 'Edit Song' : 'Upload Music'}</h1>
                 <p>Add {mode === 'album' ? 'an entire album' : 'a new track'} to the Vocalz Library</p>
             </UploadHeaderStyled>
 
-            <ToggleGroupStyled>
-                <ToggleBtnStyled $active={mode === 'single'} onClick={() => setMode('single')}>
-                    <MdLibraryMusic style={{marginRight: '8px'}} /> Single Track
-                </ToggleBtnStyled>
-                <ToggleBtnStyled $active={mode === 'album'} onClick={() => setMode('album')}>
-                    <MdAlbum style={{marginRight: '8px'}} /> Create Album
-                </ToggleBtnStyled>
-            </ToggleGroupStyled>
+            {!songToEdit && (
+                <ToggleGroupStyled>
+                    <ToggleBtnStyled $active={mode === 'single'} onClick={() => setMode('single')}>
+                        <MdLibraryMusic style={{marginRight: '8px'}} /> Single Track
+                    </ToggleBtnStyled>
+                    <ToggleBtnStyled $active={mode === 'album'} onClick={() => setMode('album')}>
+                        <MdAlbum style={{marginRight: '8px'}} /> Create Album
+                    </ToggleBtnStyled>
+                </ToggleGroupStyled>
+            )}
 
-            {!file ? (
+            {!songToEdit && (!file ? (
                 <DropZoneStyled onClick={() => fileInputRef.current?.click()}>
                     <input 
                         type="file" 
@@ -80,7 +166,7 @@ export default function UploadSongs({ user, onCancel }) {
                     <MdCheckCircle style={{ color: '#1ed760', fontSize: '24px', verticalAlign: 'middle', marginRight: '10px' }} />
                     <span style={{ color: 'white', fontWeight: '500' }}>{file.name} ready for upload</span>
                 </div>
-            )}
+            ))}
 
             <CoverUploadStyled>
                 <div className="preview-box">
@@ -102,10 +188,10 @@ export default function UploadSongs({ user, onCancel }) {
 
             <FormGridStyled>
                 <InputGroupStyled>
-                    <label>{mode === 'album' ? 'Album Title' : 'Track Title'}</label>
+                    <label>Track Name</label>
                     <input 
                         value={metadata.title} 
-                        placeholder="Enter catchy name..." 
+                        placeholder="e.g. Blinding Lights" 
                         onChange={(e) => setMetadata(m => ({...m, title: e.target.value}))}
                     />
                 </InputGroupStyled>
@@ -118,6 +204,17 @@ export default function UploadSongs({ user, onCancel }) {
                     />
                 </InputGroupStyled>
                 <InputGroupStyled>
+                    <label>Album Name</label>
+                    <input 
+                        list="album-list"
+                        value={metadata.album} 
+                        placeholder={mode === 'album' ? "Enter album name..." : "Optional: Add to an album"} 
+                        disabled={!!prefillAlbum}
+                        style={prefillAlbum ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+                        onChange={(e) => setMetadata(m => ({...m, album: e.target.value}))}
+                    />
+                </InputGroupStyled>
+                <InputGroupStyled>
                     <label>Genre</label>
                     <select 
                         value={metadata.genre} 
@@ -125,6 +222,7 @@ export default function UploadSongs({ user, onCancel }) {
                     >
                         <option>Pop</option>
                         <option>Romance</option>
+                        <option>Sad</option>
                         <option>Hip Hop</option>
                         <option>Bollywood</option>
                         <option>Rap</option>
@@ -132,21 +230,33 @@ export default function UploadSongs({ user, onCancel }) {
                         <option>Phonk</option>
                     </select>
                 </InputGroupStyled>
-                {mode === 'single' && (
-                    <InputGroupStyled>
-                        <label>Album (Optional)</label>
-                        <input 
-                            value={metadata.album} 
-                            placeholder="Part of a collection?" 
-                            onChange={(e) => setMetadata(m => ({...m, album: e.target.value}))}
-                        />
-                    </InputGroupStyled>
-                )}
+                <datalist id="album-list">
+                    {existingAlbums?.map(name => (
+                        <option key={name} value={name} />
+                    ))}
+                </datalist>
             </FormGridStyled>
 
             <ActionRowStyled>
-                <button className="cancel" onClick={onCancel}>Cancel</button>
-                <button className="publish" onClick={handlePublish}>Publish to Vocalz</button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="cancel" onClick={onCancel} disabled={loading}>Cancel</button>
+                    {songToEdit && onDelete && (
+                        <button 
+                            className="cancel" 
+                            style={{ color: '#ff4d4d', border: '1px solid #333' }} 
+                            onClick={() => {
+                                onDelete(songToEdit.id);
+                                onCancel();
+                            }}
+                            disabled={loading}
+                        >
+                            Delete Track
+                        </button>
+                    )}
+                </div>
+                <button className="publish" onClick={handlePublish} disabled={loading}>
+                    {loading ? 'Processing...' : (songToEdit ? 'Update Details' : 'Publish Track')}
+                </button>
             </ActionRowStyled>
         </UploadContainerStyled>
     );

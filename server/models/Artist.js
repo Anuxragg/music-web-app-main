@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const ArtistSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true, sparse: true },
   displayName: { type: String, required: true, trim: true },
   bio: { type: String, default: '' },
   avatar: { type: String, default: '' },

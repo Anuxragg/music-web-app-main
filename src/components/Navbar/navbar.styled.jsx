@@ -114,7 +114,7 @@ export const AppLogoContainerStyled = styled.div`
 
 export const AppNameContainerStyled = styled.div`
   margin-top: 2px;
-  font-family: 'Inter', sans-serif; /* Clean font per Spotify style */
+  font-family: 'Plus Jakarta Sans', sans-serif; /* Clean premium font */
   font-weight: 700;
   cursor: pointer;
   transition: color 0.2s ease;
@@ -247,7 +247,7 @@ export const SearchInputPillStyled = styled.div`
     border: none;
     color: white;
     font-size: 15px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     outline: none;
     width: 200px;
     &::placeholder {

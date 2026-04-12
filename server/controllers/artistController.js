@@ -40,9 +40,43 @@ exports.getArtistAlbums = async (req, res, next) => {
   }
 };
 
+const { cloudinary } = require('../config/cloudinary');
+const multer = require('multer');
+
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+exports.artistUploadMiddleware = upload.fields([{ name: 'avatar', maxCount: 1 }]);
+
+const uploadBufferToCloudinary = (buffer, folder) => new Promise((resolve, reject) => {
+  const timeoutId = setTimeout(() => {
+    reject(new Error('Cloudinary upload timed out after 10 seconds'));
+  }, 10000);
+
+  const stream = cloudinary.uploader.upload_stream(
+    { folder, resource_type: 'image' },
+    (error, result) => {
+      clearTimeout(timeoutId);
+      if (error) return reject(error);
+      return resolve(result);
+    }
+  );
+  stream.end(buffer);
+});
+
 exports.updateArtist = async (req, res, next) => {
   try {
-    const artist = await Artist.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    let updateData = { ...req.body };
+
+    if (req.files && req.files.avatar) {
+      const result = await uploadBufferToCloudinary(req.files.avatar[0].buffer, 'vocalz/artist_avatars');
+      updateData.avatar = result.secure_url;
+    }
+
+    const artist = await Artist.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (!artist) return res.status(404).json({ success: false, message: 'Artist not found' });
     res.status(200).json({ success: true, data: artist });
   } catch (error) {
@@ -78,6 +112,36 @@ exports.unfollowArtist = async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Artist unfollowed' });
   } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateArtistByDisplayName = async (req, res, next) => {
+  try {
+    const { displayName } = req.params;
+    let updateData = { ...req.body };
+
+    if (req.files && req.files.avatar) {
+      const result = await uploadBufferToCloudinary(req.files.avatar[0].buffer, 'vocalz/artist_avatars');
+      updateData.avatar = result.secure_url;
+    }
+
+    // Upsert: Find by name or create
+    let artist = await Artist.findOneAndUpdate(
+      { displayName },
+      { 
+        $set: updateData,
+        $setOnInsert: { 
+          bio: `Artist profile for ${displayName}`,
+          avatar: updateData.avatar || '/media/default_artist.png'
+        }
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(200).json({ success: true, data: artist });
+  } catch (error) {
+    console.error('Error in updateArtistByDisplayName:', error);
     next(error);
   }
 };

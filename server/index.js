@@ -93,8 +93,17 @@ app.use(cors({
 
 app.use(morgan('dev'));
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+
+app.use('/api/songs', (req, res, next) => {
+  if (req.method === 'POST') {
+    console.log(`🚀 [BACKEND] Incoming song upload request: ${req.headers['content-length']} bytes`);
+  }
+  next();
+});
+
+// Set global JSON limits higher for consistency
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/api', limiter);
 
 app.get('/api/health', (req, res) => {
@@ -127,9 +136,14 @@ const PORT = process.env.PORT || 5000;
 
 // Only start the listener if run directly (local development)
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`VOCALZ server running on port ${PORT}`);
   });
+  
+  // High timeouts for large music file processing (10 mins)
+  server.timeout = 600000;
+  server.keepAliveTimeout = 610000;
+  server.headersTimeout = 620000;
 }
 
 module.exports = app;

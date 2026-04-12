@@ -1,8 +1,15 @@
 const multer = require('multer');
+const mongoose = require('mongoose');
 const Song = require('../models/Song');
 const { cloudinary } = require('../config/cloudinary');
 
-const memoryUpload = multer({ storage: multer.memoryStorage() });
+const memoryUpload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit for audio files
+  }
+});
+
 exports.songUploadMiddleware = memoryUpload.fields([
   { name: 'audio', maxCount: 1 },
   { name: 'cover', maxCount: 1 },
@@ -63,30 +70,73 @@ exports.createSong = async (req, res, next) => {
     let coverUpload;
 
     if (req.files?.audio?.[0]) {
+      console.log('--- Cloudinary: Uploading Audio ---');
       audioUpload = await uploadBufferToCloudinary(req.files.audio[0].buffer, 'vocalz/audio', 'video');
+      console.log('✅ Audio Upload Success:', audioUpload.secure_url);
+    } else {
+      return res.status(400).json({ success: false, message: 'Audio file is required' });
     }
 
     if (req.files?.cover?.[0]) {
+      console.log('--- Cloudinary: Uploading Cover ---');
       coverUpload = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/covers', 'image');
+      console.log('✅ Cover Upload Success:', coverUpload.secure_url);
     }
 
     const song = await Song.create({
-      title,
-      artist,
+      title: title || 'Untitled Track',
+      artist: artist || req.user.username,
       artistRef: artistRef || undefined,
-      album: album || undefined,
+      album: (album && mongoose.Types.ObjectId.isValid(album)) ? album : undefined,
       albumText: albumText || '',
       audioUrl: audioUpload?.secure_url || '',
       audioPublicId: audioUpload?.public_id || '',
       coverUrl: coverUpload?.secure_url || '',
       coverPublicId: coverUpload?.public_id || '',
-      duration: Number(duration || 0),
-      genre,
+      duration: Number(audioUpload?.duration || duration || 0),
+      genre: genre || 'Pop',
       uploadedBy: req.user._id,
       isPublic: String(isPublic) !== 'false',
     });
 
     return res.status(201).json({ success: true, data: song });
+  } catch (error) {
+    console.error('❌ BACKEND UPLOAD ERROR:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Cloudinary or Database Error: ' + error.message,
+      error: error
+    });
+  }
+};
+
+exports.updateSong = async (req, res, next) => {
+  try {
+    const { title, artist, genre, albumText, isPublic } = req.body;
+    const song = await Song.findById(req.params.id);
+
+    if (!song) return res.status(404).json({ success: false, message: 'Song not found' });
+
+    // Permissions check
+    if (song.uploadedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to edit this track' });
+    }
+
+    if (title) song.title = title;
+    if (artist) song.artist = artist;
+    if (genre) song.genre = genre;
+    if (albumText !== undefined) song.albumText = albumText;
+    if (isPublic !== undefined) song.isPublic = (isPublic === true || isPublic === 'true');
+
+    // Handle Cover Update
+    if (req.files?.cover?.[0]) {
+      const coverUpload = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/covers', 'image');
+      song.coverUrl = coverUpload.secure_url;
+      song.coverPublicId = coverUpload.public_id;
+    }
+
+    await song.save();
+    return res.status(200).json({ success: true, data: song });
   } catch (error) {
     return next(error);
   }
@@ -115,6 +165,23 @@ exports.getTrending = async (req, res, next) => {
   try {
     const songs = await Song.find({ isPublic: true }).sort({ playCount: -1 }).limit(10);
     return res.status(200).json({ success: true, data: songs });
+  } catch (error) {
+    return next(error);
+  }
+};
+exports.renameAlbum = async (req, res, next) => {
+  try {
+    const { oldName, newName } = req.body;
+    if (!oldName || !newName) {
+      return res.status(400).json({ success: false, message: 'Old and new names are required' });
+    }
+
+    await Song.updateMany(
+      { albumText: oldName },
+      { $set: { albumText: newName } }
+    );
+
+    return res.status(200).json({ success: true, message: 'Album renamed successfully' });
   } catch (error) {
     return next(error);
   }

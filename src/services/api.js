@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: '/api',
   withCredentials: true,
+  timeout: 300000, // 5 minutes for large audio uploads
 });
 
 let isRefreshing = false;

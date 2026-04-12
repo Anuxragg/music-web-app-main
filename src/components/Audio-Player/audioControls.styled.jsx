@@ -138,11 +138,12 @@ export const SongSliderContainerStyled = styled.div`
   margin: 0;
 
   > p {
-    font-weight: 300;
-    font-size: 13px;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.2px;
     margin: 0;
-    min-width: 40px;
+    min-width: 45px; /* Increased to prevent truncation */
     color: #b3b3b3;
     text-align: center;
   }
@@ -175,6 +176,18 @@ export const ProgressBarContainerStyled = styled.div`
   cursor: pointer;
   position: relative;
 
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -12px 0; /* Increase vertical hit area */
+    z-index: 1;
+  }
+
+  > * {
+    position: relative;
+    z-index: 2;
+  }
+
   &:hover > div::after {
     transform: translateY(-50%) scale(1);
   }
@@ -196,13 +209,12 @@ export const ProgressBarContainerStyled = styled.div`
     min-width: 60px;
   }
 `
-
 export const ProgressBarStyled = styled.div`
   background-color: #f83821;
   height: 100%;
   width: 0%;
   border-radius: 10px;
-  transition: width 0.1s ease-in-out;
+  transition: ${props => props.$isDragging ? 'none' : 'width 0.1s ease-in-out'};
   position: relative;
 
   &::after {
@@ -227,12 +239,34 @@ export const VolumeControlContainerStyled = styled.div`
   flex-shrink: 0;
   margin: 0;
   cursor: pointer;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -10px -15px; /* Invisible hit area expansion */
+    z-index: 1;
+  }
+
+  > * {
+    position: relative;
+    z-index: 2; /* Ensure buttons stay on top of hit area */
+  }
 
   &:hover > div:last-child {
     width: 80px;
     opacity: 1;
     margin-left: 8px;
   }
+
+  /* Keep expanded if dragging */
+  ${props => props.$isDragging && `
+    > div:last-child {
+      width: 80px;
+      opacity: 1;
+      margin-left: 8px;
+    }
+  `}
 
   > span {
     display: flex;
@@ -270,7 +304,7 @@ export const VolumeControlBarStyled = styled.div`
   cursor: pointer;
   flex-shrink: 0;
   margin: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: ${props => props.$isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
   overflow: hidden;
 
   &:hover > div::after {
@@ -283,7 +317,7 @@ export const VolumeChangeStyled = styled.div`
   width: 100%;
   border-radius: 5px;
   background-color: #f83821;
-  transition: width 0.1s ease-in-out;
+  transition: ${props => props.$isDragging ? 'none' : 'width 0.1s ease-in-out'};
   position: relative;
 
   &::after {

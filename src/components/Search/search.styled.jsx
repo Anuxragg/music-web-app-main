@@ -29,12 +29,12 @@ export const SearchFieldWrapperStyled = styled.div`
     height: 30px;
     background-color: #1A1A1A;
     color: white;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     border: none;
   }
 
   > input[type='text']::placeholder {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 12px;
     font-weight: 300;
     color: white;

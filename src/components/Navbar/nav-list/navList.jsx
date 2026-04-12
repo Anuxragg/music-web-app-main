@@ -8,7 +8,6 @@ export default function NavList({ menuOpen = false, collapsed = false, currentVi
 
     const libraryItems = [
         { icon: <MdPlaylistPlay />, text: 'Playlists' },
-        { icon: <MdOutlineFavoriteBorder />, text: 'Liked Songs' },
         { icon: <MdAlbum />, text: 'Albums' },
         { icon: <MdPersonOutline />, text: 'Artists' },
     ];

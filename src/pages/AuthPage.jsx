@@ -22,7 +22,7 @@ const GridBg = styled.div`
   transform: rotate(-16deg) scale(1.14);
 `;
  
-const SPEEDS = [46, 40, 43, 38, 48, 42, 45, 39];
+const SPEEDS = [86, 80, 83, 78, 88, 82, 85, 79];
 const DELAYS = [-14, -6, -11, -3, -16, -9, -13, -4];
 const REPEAT_COUNT = 6;
  
@@ -68,7 +68,7 @@ const Page = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 2;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 `;
  
 /* The Netflix-style subtle dark card */
@@ -88,22 +88,23 @@ const Card = styled.div`
 `;
  
 const Logo = styled.div`
-  font-family: 'Syne', sans-serif;
-  font-size: 2rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.2rem;
   font-weight: 800;
-  letter-spacing: -1px;
-  color: #e50914;
+  letter-spacing: -1.5px;
+  color: #fff;
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  text-shadow: 0 0 20px rgba(255,255,255,0.2);
 `;
  
 const Heading = styled.h1`
-  font-family: 'Syne', sans-serif;
-  font-size: 1.75rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.85rem;
   font-weight: 700;
   color: #fff;
-  letter-spacing: -0.3px;
-  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
 `;
  
 const Input = styled.input`
@@ -113,12 +114,12 @@ const Input = styled.input`
   border-radius: 4px;
   padding: 16px;
   color: #fff;
-  font-size: 0.92rem;
-  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   outline: none;
   margin-bottom: 12px;
   transition: background 0.15s;
- 
+  
   &::placeholder { color: #8c8c8c; }
   &:focus { background: #454545; }
 `;
@@ -144,38 +145,44 @@ const ErrorMsg = styled.div`
  
 const SubmitBtn = styled.button`
   width: 100%;
-  padding: 15px;
-  background: #e50914;
+  padding: 16px;
+  background: #f83821;
   color: #fff;
   border: none;
   border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-  margin-top: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 8px;
  
-  &:hover:not(:disabled) { background: #f40612; }
-  &:active:not(:disabled) { background: #c40812; transform: scale(0.99); }
+  &:hover:not(:disabled) { 
+    background: #ff4d3a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(248, 56, 33, 0.3);
+  }
+  &:active:not(:disabled) { transform: scale(0.98); }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 `;
  
 const Footer = styled.p`
-  font-size: 0.85rem;
-  color: #737373;
-  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #b3b3b3;
+  margin-top: 24px;
+  text-align: center;
  
   button {
     background: none;
     border: none;
     color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
     padding: 0;
+    margin-left: 4px;
     &:hover { text-decoration: underline; }
   }
 `;

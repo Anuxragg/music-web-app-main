@@ -1,4 +1,25 @@
+const multer = require('multer');
+const { cloudinary } = require('../config/cloudinary');
 const Playlist = require('../models/Playlist');
+
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for images
+});
+
+exports.playlistUploadMiddleware = upload.fields([{ name: 'cover', maxCount: 1 }]);
+
+const uploadBufferToCloudinary = (buffer, folder) => new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    { folder, resource_type: 'image' },
+    (error, result) => {
+      if (error) return reject(error);
+      return resolve(result);
+    }
+  );
+  stream.end(buffer);
+});
 
 exports.getMyPlaylists = async (req, res, next) => {
   try {
@@ -24,7 +45,15 @@ exports.getPlaylist = async (req, res, next) => {
 
 exports.createPlaylist = async (req, res, next) => {
   try {
-    const playlist = await Playlist.create({ ...req.body, owner: req.user._id });
+    let playlistData = { ...req.body, owner: req.user._id };
+
+    // Handle cover image upload if present
+    if (req.files && req.files.cover) {
+      const result = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/playlist_covers');
+      playlistData.coverUrl = result.secure_url;
+    }
+
+    const playlist = await Playlist.create(playlistData);
     res.status(201).json({ success: true, data: playlist });
   } catch (error) {
     next(error);
@@ -33,9 +62,17 @@ exports.createPlaylist = async (req, res, next) => {
 
 exports.updatePlaylist = async (req, res, next) => {
   try {
+    let updateData = { ...req.body };
+
+    // Handle cover image upload if present
+    if (req.files && req.files.cover) {
+      const result = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/playlist_covers');
+      updateData.coverUrl = result.secure_url;
+    }
+
     const playlist = await Playlist.findOneAndUpdate(
       { _id: req.params.id, owner: req.user._id },
-      req.body,
+      updateData,
       { new: true }
     );
     if (!playlist) return res.status(404).json({ success: false, message: 'Playlist not found' });
@@ -47,9 +84,23 @@ exports.updatePlaylist = async (req, res, next) => {
 
 exports.deletePlaylist = async (req, res, next) => {
   try {
-    const deleted = await Playlist.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
-    if (!deleted) return res.status(404).json({ success: false, message: 'Playlist not found' });
-    res.status(200).json({ success: true, message: 'Playlist deleted' });
+    const playlistId = req.params.id;
+    const userId = req.user._id.toString();
+    
+    // Find the playlist first to confirm ownership
+    const playlist = await Playlist.findById(playlistId);
+    if (!playlist) {
+      return res.status(404).json({ success: false, message: 'Playlist not found' });
+    }
+    
+    // Check if the current user is the owner
+    if (playlist.owner.toString() !== userId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to delete this playlist' });
+    }
+    
+    await Playlist.findByIdAndDelete(playlistId);
+    
+    res.status(200).json({ success: true, message: 'Playlist deleted successfully' });
   } catch (error) {
     next(error);
   }
