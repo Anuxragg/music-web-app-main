@@ -356,11 +356,11 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         try {
             const res = await api.delete(`/playlists/${selectedPlaylist._id}`);
             if (res.data?.success) {
-                setUserPlaylists(prev => prev.filter(p => p._id !== selectedPlaylist._id));
+                notify("Collection deleted");
                 setIsEditingPlaylist(false);
                 setSelectedPlaylist(null);
                 setCurrentView('Playlists');
-                notify("Collection deleted");
+                fetchLibraryData();
             }
         } catch (err) {
             console.error(err);
@@ -369,14 +369,31 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         } finally { setSaveLoading(false); }
     };
 
-    let displayedSongs = [];
+    let displayedSongs = liveSongs;
     let heading = currentView;
     let isArtistView = false;
     let artistsList = [];
 
-    if (searchResults && searchResults.songs && searchResults.songs.length > 0) {
+    // Detailed View Overrides
+    if (selectedAlbum) {
+        displayedSongs = liveSongs.filter(song => song.albumText === selectedAlbum);
+        heading = selectedAlbum;
+    } else if (selectedPlaylist) {
+        displayedSongs = (selectedPlaylist.songs || []).map(ps => {
+            if (!ps.song) return null;
+            const songId = typeof ps.song === 'object' ? ps.song._id : ps.song;
+            return liveSongs.find(s => String(s.id) === String(songId));
+        }).filter(Boolean);
+        heading = selectedPlaylist.name;
+    } 
+    // Menu View Logic
+    else if (searchResults && searchResults.songs && searchResults.songs.length > 0) {
         displayedSongs = searchResults.songs.map(song => ({
-            id: song._id, songName: song.title, artist: song.artist,
+            id: song._id,
+            songName: song.title,
+            artist: song.artist,
+            albumText: song.albumText || '',
+            genre: song.genre || 'Other',
             duration: song.durationFormatted || formatTime(song.duration),
             songImage: song.coverUrl || 'https://via.placeholder.com/100',
             audioUrl: song.audioUrl
@@ -384,17 +401,14 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         heading = `Search Results (${displayedSongs.length})`;
     } else if (currentView === 'Listen History') {
         displayedSongs = recentHistory.map(id => liveSongs.find(song => String(song.id) === String(id))).filter(Boolean);
+        heading = 'Listen History';
     } else if (currentView === 'Liked Songs') {
         displayedSongs = liveSongs.filter(song => favorites.includes(String(song.id)));
+        heading = 'Liked Songs';
     } else if (currentView === 'Artists') {
         if (selectedArtist) {
-            if (selectedAlbum) {
-                displayedSongs = liveSongs.filter(song => song.albumText === selectedAlbum);
-                heading = selectedAlbum;
-            } else {
-                displayedSongs = liveSongs.filter(song => song.artist === selectedArtist);
-                heading = null;
-            }
+            displayedSongs = liveSongs.filter(song => song.artist === selectedArtist);
+            heading = null;
         } else {
             isArtistView = true;
             heading = 'Artists';
@@ -405,62 +419,49 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             });
         }
     } else if (currentView === 'Albums' || currentView === 'Album') {
-        if (selectedAlbum) {
-            displayedSongs = liveSongs.filter(song => song.albumText === selectedAlbum);
-            heading = selectedAlbum;
-        } else {
-            heading = 'Albums';
-            // Merge unique albums from liveSongs and registeredAlbums
-            const liveAlbumNames = Array.from(new Set(liveSongs.map(song => song.albumText).filter(Boolean)));
-            const registeredNames = registeredAlbums.map(a => a.title).filter(Boolean);
-            const allUniqueAlbumNames = Array.from(new Set([...liveAlbumNames, ...registeredNames]));
+        heading = 'Albums';
+        const liveAlbumNames = Array.from(new Set(liveSongs.map(song => song.albumText).filter(Boolean)));
+        const registeredNames = registeredAlbums.map(a => a.title).filter(Boolean);
+        const allUniqueAlbumNames = Array.from(new Set([...liveAlbumNames, ...registeredNames]));
 
-            artistsList = allUniqueAlbumNames.map(name => {
-                const registered = registeredAlbums.find(a => a.title === name);
-                const live = liveSongs.find(s => s.albumText === name);
-                return {
-                    name,
-                    image: registered?.coverUrl || live?.songImage || '/media/default_album.png',
-                    isAlbum: true,
-                    description: registered?.artist || live?.artist || 'Unknown Artist'
-                };
-            });
-            isArtistView = true;
-        }
-    } else if (currentView === 'Playlists' || currentView === 'Playlist') {
-        if (selectedPlaylist) {
-            displayedSongs = (selectedPlaylist.songs || []).map(ps => {
-                const songId = typeof ps.song === 'object' ? ps.song._id : ps.song;
-                return liveSongs.find(s => String(s.id) === String(songId));
-            }).filter(Boolean);
-            heading = selectedPlaylist.name;
-        } else {
-            heading = 'Playlists';
-            // Add Liked Songs as a special first card
-            const likedSongsCard = {
-                name: 'Liked Songs',
-                image: '/media/liked_songs_cover.png', // Fallback, we'll style it in the grid
-                isLikedSongs: true,
-                isPlaylist: true
+        artistsList = allUniqueAlbumNames.map(name => {
+            const registered = registeredAlbums.find(a => a.title === name);
+            const live = liveSongs.find(s => s.albumText === name);
+            return {
+                name,
+                image: registered?.coverUrl || live?.songImage || '/media/default_album.png',
+                isAlbum: true,
+                description: registered?.artist || live?.artist || 'Unknown Artist'
             };
+        });
+        isArtistView = true;
+    } else if (currentView === 'Playlists' || currentView === 'Playlist') {
+        heading = 'Playlists';
+        const likedSongsCard = {
+            name: 'Liked Songs',
+            image: '/media/liked_songs_cover.png',
+            isLikedSongs: true,
+            isPlaylist: true
+        };
 
-            artistsList = [likedSongsCard, ...userPlaylists.map(p => ({
-                name: p.name,
-                image: p.coverUrl || '/media/default_playlist.png',
-                id: p._id,
-                isPlaylist: true,
-                playlistObj: p
-            }))];
-            isArtistView = true;
-        }
+        artistsList = [likedSongsCard, ...userPlaylists.map(p => ({
+            name: p.name,
+            image: p.coverUrl || '/media/default_playlist.png',
+            id: p._id,
+            isPlaylist: true,
+            playlistObj: p
+        }))];
+        isArtistView = true;
     } else if (currentView === 'Discover') {
         if (selectedGenre) {
             displayedSongs = liveSongs.filter(song => song.genre?.toLowerCase() === selectedGenre.toLowerCase());
             heading = selectedGenre;
-        } else heading = 'Explore Categories';
-    } else displayedSongs = liveSongs;
+        } else {
+            heading = 'Explore Categories';
+        }
+    }
 
-    const isArtistProfileView = currentView === 'Artists' && selectedArtist && !selectedAlbum;
+    const isArtistProfileView = currentView === 'Artists' && selectedArtist && !selectedAlbum && !selectedPlaylist;
     const isExploreGrid = currentView === 'Discover' && !selectedGenre;
     const isHomeView = currentView === 'Home';
     const isAlbumView = selectedAlbum || selectedPlaylist;
@@ -559,7 +560,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 {(selectedAlbum || selectedPlaylist || selectedGenre) && (
                                     <button 
                                         onClick={() => { setSelectedAlbum(null); setSelectedPlaylist(null); setSelectedGenre(null); }}
-                                        style={{ background: 'none', border: 'none', color: 'white', opacity: 0.7, cursor: 'pointer', marginBottom: '20px', padding: 0 }}
+                                        style={{ background: 'none', border: 'none', color: 'white', opacity: 0.7, cursor: 'pointer', marginBottom: '20px', padding: 0, display: 'flex', alignSelf: 'flex-start' }}
                                     >
                                         <IoArrowBack size={28} />
                                     </button>
@@ -597,11 +598,11 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     <button className="icon-action" style={isShuffle ? { color: '#f83821' } : {}} onClick={() => setIsShuffle(!isShuffle)}><IoShuffleOutline /></button>
                                     <button className="icon-action" style={isRepeat ? { color: '#f83821' } : {}} onClick={() => setIsRepeat(!isRepeat)}><IoRepeatOutline /></button>
 
-                                    {((currentView === 'Playlist' || currentView === 'Playlists') && selectedPlaylist?.owner === user?.id) && (
+                                    {((currentView === 'Playlist' || currentView === 'Playlists') && (selectedPlaylist?.owner === user?.id || selectedPlaylist?.owner?._id === user?.id || user?.role === 'admin')) && (
                                         <button className="icon-action" onClick={() => { setIsEditingPlaylist(true); setEditPlaylistName(selectedPlaylist.name); setEditPlaylistDescription(selectedPlaylist.description || ''); setEditPlaylistPreview(selectedPlaylist.coverUrl || null); setEditPlaylistCover(null); }}><MdModeEdit /></button>
                                     )}
 
-                                    {(((currentView === 'Playlist' || currentView === 'Playlists') && selectedPlaylist?.owner === user?.id) || ((currentView === 'Album' || currentView === 'Albums') && user?.role === 'admin' && selectedAlbum)) && (
+                                    {(((currentView === 'Playlist' || currentView === 'Playlists') && (selectedPlaylist?.owner === user?.id || selectedPlaylist?.owner?._id === user?.id)) || ((currentView === 'Album' || currentView === 'Albums') && user?.role === 'admin' && selectedAlbum)) && (
                                         <button className="icon-action" onClick={() => setIsQuickAddOpen(true)}><MdAddCircleOutline /></button>
                                     )}
                                     <div className="search-action">

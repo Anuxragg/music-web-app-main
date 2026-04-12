@@ -12,7 +12,7 @@ const PlaylistSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   songs: [PlaylistSongSchema],
   coverUrl: { type: String, default: '' },
-  isPublic: { type: Boolean, default: true },
+  isPublic: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Playlist', PlaylistSchema);

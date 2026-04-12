@@ -30,6 +30,22 @@ exports.getMyPlaylists = async (req, res, next) => {
   }
 };
 
+exports.getAllPlaylists = async (req, res, next) => {
+  try {
+    // Return all public playlists OR playlists owned by the current user
+    const playlists = await Playlist.find({
+      $or: [
+        { isPublic: true },
+        { owner: req.user._id }
+      ]
+    }).populate('owner', 'displayName avatar role')
+      .populate('songs.song', 'title artist coverUrl');
+    res.status(200).json({ success: true, data: playlists });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getPlaylist = async (req, res, next) => {
   try {
     const playlist = await Playlist.findById(req.params.id).populate('songs.song', 'title artist coverUrl audioUrl');
@@ -70,12 +86,16 @@ exports.updatePlaylist = async (req, res, next) => {
       updateData.coverUrl = result.secure_url;
     }
 
+    const query = req.user.role === 'admin' 
+      ? { _id: req.params.id }
+      : { _id: req.params.id, owner: req.user._id };
+
     const playlist = await Playlist.findOneAndUpdate(
-      { _id: req.params.id, owner: req.user._id },
+      query,
       updateData,
       { new: true }
     );
-    if (!playlist) return res.status(404).json({ success: false, message: 'Playlist not found' });
+    if (!playlist) return res.status(404).json({ success: false, message: 'Playlist not found or unauthorized' });
     res.status(200).json({ success: true, data: playlist });
   } catch (error) {
     next(error);
@@ -93,8 +113,8 @@ exports.deletePlaylist = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Playlist not found' });
     }
     
-    // Check if the current user is the owner
-    if (playlist.owner.toString() !== userId) {
+    // Check if the current user is the owner OR an admin
+    if (playlist.owner.toString() !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Unauthorized to delete this playlist' });
     }
     

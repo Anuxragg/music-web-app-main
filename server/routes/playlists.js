@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.use(protect);
 
+router.get('/', playlistController.getAllPlaylists);
 router.get('/me', playlistController.getMyPlaylists);
 router.get('/:id', playlistController.getPlaylist);
 router.post('/', playlistController.playlistUploadMiddleware, playlistController.createPlaylist);
