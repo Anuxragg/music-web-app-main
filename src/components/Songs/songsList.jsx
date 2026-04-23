@@ -529,7 +529,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     const albumSongs = liveSongs.filter(s => s.albumText === albumName);
                                     const firstSong = albumSongs[0];
                                     return (
-                                        <AlbumCardStyled key={albumName} onClick={() => setSelectedAlbum(albumName)}>
+                                        <AlbumCardStyled key={albumName} onClick={() => { setSelectedAlbum(albumName); setCurrentView('Album'); }}>
                                             <div className="album-image-container">
                                                 <img src={firstSong.songImage} alt={albumName} className="album-image" />
                                                 <button className="play-button-overlay" onClick={(e) => { e.stopPropagation(); handleSongClick(firstSong, albumSongs); }}>
