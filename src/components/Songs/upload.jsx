@@ -162,8 +162,8 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                     <span>High quality WAV or MP3 preferred</span>
                 </DropZoneStyled>
             ) : (
-                <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(30,215,96,0.05)', borderRadius: '8px', border: '1px solid #1ed760', marginBottom: '20px' }}>
-                    <MdCheckCircle style={{ color: '#1ed760', fontSize: '24px', verticalAlign: 'middle', marginRight: '10px' }} />
+                <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(248,56,33,0.05)', borderRadius: '8px', border: '1px solid #f83821', marginBottom: '20px' }}>
+                    <MdCheckCircle style={{ color: '#f83821', fontSize: '24px', verticalAlign: 'middle', marginRight: '10px' }} />
                     <span style={{ color: 'white', fontWeight: '500' }}>{file.name} ready for upload</span>
                 </div>
             ))}

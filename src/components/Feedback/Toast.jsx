@@ -17,7 +17,7 @@ const ToastContainer = styled.div`
   align-items: center;
   padding: 12px 20px;
   border-radius: 12px;
-  background: ${props => props.$type === 'success' ? '#1ed760' : props.$type === 'error' ? '#ff4d4d' : '#333'};
+  background: ${props => props.$type === 'success' ? '#f83821' : props.$type === 'error' ? '#ff4d4d' : '#333'};
   color: ${props => props.$type === 'success' ? 'black' : 'white'};
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   min-width: 300px;

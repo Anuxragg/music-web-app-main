@@ -619,7 +619,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 {displayedSongs.map((song, index) => (
                                     <AlbumTrackRowStyled key={song.id} onClick={() => handleSongClick(song, displayedSongs)}>
                                         <div className="col-index">
-                                            {clickedSong?.id === song.id ? <IoPlay style={{ color: '#1ed760' }} /> : index + 1}
+                                            {clickedSong?.id === song.id ? <IoPlay style={{ color: '#f83821' }} /> : index + 1}
                                         </div>
                                         <div className="col-title">
                                             <p className="song-name">{song.songName}</p>
@@ -849,7 +849,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                             <img src={s.songImage} style={{ width: '40px', height: '40px', borderRadius: '4px' }} alt="" />
                                             <p style={{ color: 'white', margin: 0, fontSize: '14px' }}>{s.songName}</p>
                                         </div>
-                                        <button onClick={(e) => (currentView === 'Playlist' || currentView === 'Playlists') && selectedPlaylist ? handleAddSongToPlaylist(selectedPlaylist._id, s.id) : handleMoveToAlbum(e, s.id, selectedAlbum)} style={{ background: '#1ed760', border: 'none', borderRadius: '20px', padding: '5px 15px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>Add</button>
+                                        <button onClick={(e) => (currentView === 'Playlist' || currentView === 'Playlists') && selectedPlaylist ? handleAddSongToPlaylist(selectedPlaylist._id, s.id) : handleMoveToAlbum(e, s.id, selectedAlbum)} style={{ background: '#f83821', border: 'none', borderRadius: '20px', padding: '5px 15px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>Add</button>
                                     </div>
                                 ))}
                             </div>

@@ -39,10 +39,10 @@ const Ring = styled.div`
   width: 64px;
   height: 64px;
   margin: 8px;
-  border: 4px solid #1ed760;
+  border: 4px solid #f83821;
   border-radius: 50%;
   animation: ${spin} 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color: #1ed760 transparent transparent transparent;
+  border-color: #f83821 transparent transparent transparent;
 
   &:nth-child(1) { animation-delay: -0.45s; }
   &:nth-child(2) { animation-delay: -0.3s; }

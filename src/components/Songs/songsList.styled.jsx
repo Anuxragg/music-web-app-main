@@ -881,7 +881,7 @@ export const ArtistActionsStyled = styled.div`
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #1ed760;
+    background: #f83821;
     border: none;
     display: flex;
     align-items: center;
@@ -963,7 +963,7 @@ export const ArtistProfileTabsStyled = styled.div`
         left: 0;
         right: 0;
         height: 3px;
-        background: #1ed760;
+        background: #f83821;
         border-radius: 2px;
       }
     }
