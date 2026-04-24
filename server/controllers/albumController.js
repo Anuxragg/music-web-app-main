@@ -82,8 +82,24 @@ exports.updateAlbum = async (req, res, next) => {
 
 exports.deleteAlbum = async (req, res, next) => {
   try {
-    const album = await Album.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
-    if (!album) return res.status(404).json({ success: false, message: 'Album not found' });
+    const query = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, owner: req.user._id };
+    const album = await Album.findOne(query);
+    if (!album) return res.status(404).json({ success: false, message: 'Album not found or unauthorized' });
+
+    if (album.coverPublicId) {
+      // Check if any other album or song uses this cover image
+      const Song = require('../models/Song');
+      const [otherAlbum, songWithCover] = await Promise.all([
+        Album.findOne({ coverPublicId: album.coverPublicId, _id: { $ne: album._id } }),
+        Song.findOne({ coverPublicId: album.coverPublicId })
+      ]);
+
+      if (!otherAlbum && !songWithCover) {
+        await cloudinary.uploader.destroy(album.coverPublicId, { resource_type: 'image' });
+      }
+    }
+
+    await album.deleteOne();
     res.status(200).json({ success: true, message: 'Album deleted' });
   } catch (error) {
     next(error);

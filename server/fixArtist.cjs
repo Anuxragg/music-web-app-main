@@ -1,9 +1,14 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const Album = require('./models/Album');
 
 async function fix() {
   try {
-    await mongoose.connect('mongodb+srv://anuragpal9002_db_user:H5EAHltoNLgUjBun@musiccluster.gpvwl3i.mongodb.net/?appName=MusicCluster');
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGO_URI is not defined in environment variables');
+    }
+    await mongoose.connect(mongoUri);
 
     const result = await Album.updateMany(
       { artist: 'Daniel Caesar' },

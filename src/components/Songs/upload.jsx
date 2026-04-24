@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import api from '../../services/api';
 import { 
     UploadContainerStyled, UploadHeaderStyled, ToggleGroupStyled, ToggleBtnStyled, 
@@ -9,7 +9,7 @@ import { MdCloudUpload, MdImage, MdCheckCircle, MdLibraryMusic, MdAlbum } from '
 
 export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, onDelete, existingAlbums, notify, setGlobalLoading }) {
     const [mode, setMode] = useState('single'); // 'single' or 'album'
-    const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [cover, setCover] = useState(null);
     const [preview, setPreview] = useState(songToEdit?.coverUrl || null);
     const [metadata, setMetadata] = useState({
@@ -24,13 +24,27 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
     const fileInputRef = useRef(null);
     const coverInputRef = useRef(null);
 
+    // Auto-inherit album cover preview
+    useEffect(() => {
+        if (mode === 'single' && !cover && metadata.album) {
+            const match = existingAlbums?.find(a => 
+                (a.title || a).toString().toLowerCase() === metadata.album.trim().toLowerCase()
+            );
+            if (match?.coverUrl) setPreview(match.coverUrl);
+        }
+    }, [metadata.album, cover, mode, existingAlbums]);
+
     const handleFileDrop = (e) => {
-        const droppedFile = e.target.files[0];
-        if (droppedFile) {
-            setFile(droppedFile);
+        const selectedFiles = Array.from(e.target.files);
+        if (selectedFiles.length > 0) {
+            setFiles(selectedFiles);
             // Pre-fill title from filename
-            const cleanName = droppedFile.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
-            setMetadata(prev => ({ ...prev, title: cleanName }));
+            if (selectedFiles.length === 1) {
+                const cleanName = selectedFiles[0].name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+                setMetadata(prev => ({ ...prev, title: cleanName }));
+            } else {
+                setMetadata(prev => ({ ...prev, title: 'Multiple Tracks' }));
+            }
         }
     };
 
@@ -47,7 +61,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
         // If mode is 'album', and we HAVE a track file, we upload the track to that album
         // If mode is 'album', and we DON'T HAVE a track file, we just create the Album shell
         
-        if (mode === 'single' && !songToEdit && !file) {
+        if (mode === 'single' && !songToEdit && files.length === 0) {
             notify('Please select an audio file first.', 'error');
             return;
         }
@@ -57,7 +71,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
             return;
         }
 
-        if (setGlobalLoading) setGlobalLoading(songToEdit ? 'Updating track details...' : 'Publishing your track to Vocalz...');
+        if (setGlobalLoading) setGlobalLoading(songToEdit ? 'Updating track details...' : (files.length > 1 ? `Publishing ${files.length} tracks to Vocalz...` : 'Publishing your track to Vocalz...'));
         setLoading(true);
         try {
             if (songToEdit) {
@@ -69,9 +83,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 formData.append('albumText', metadata.album || '');
                 if (cover) formData.append('cover', cover);
 
-                await api.patch(`/songs/${songToEdit.id}`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                await api.patch(`/songs/${songToEdit.id}`, formData);
                 
                 notify('Song updated successfully!');
                 onCancel();
@@ -79,47 +91,55 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 return;
             }
 
-            // Case 1: Create an empty Album shell (No song file uploaded)
-            if (mode === 'album' && !file) {
-                const formData = new FormData();
-                if (cover) formData.append('cover', cover);
-                formData.append('title', metadata.album); // The album's title
-                formData.append('artist', metadata.artist);
-                formData.append('genre', metadata.genre);
+            let createdAlbumId = null;
+            if (mode === 'album') {
+                const albumFormData = new FormData();
+                if (cover) albumFormData.append('cover', cover);
+                albumFormData.append('title', metadata.album || metadata.title || 'Untitled Album');
+                albumFormData.append('artist', metadata.artist);
+                albumFormData.append('genre', metadata.genre);
                 
-                const res = await api.post('/albums', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                const res = await api.post('/albums', albumFormData);
 
                 if (res.data?.success) {
-                    notify('Album shell created! You can now upload songs to this album.');
-                    onCancel();
-                    window.location.reload();
+                    createdAlbumId = res.data.data._id;
+                    if (files.length === 0) {
+                        notify('Album created! You can now upload songs to this album.');
+                        onCancel();
+                        window.location.reload();
+                        return;
+                    }
                 }
-                return;
             }
 
             // Case 2: Upload a track (and optionally link/create album)
-            const formData = new FormData();
-            formData.append('audio', file);
-            if (cover) formData.append('cover', cover);
-            formData.append('title', metadata.title);
-            formData.append('artist', metadata.artist);
-            formData.append('genre', metadata.genre);
-            formData.append('albumText', metadata.album || '');
-            formData.append('isPublic', 'true');
-
-            const res = await api.post('/songs', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-
-            if (res.data?.success) {
-                notify('Success! Your track is now live on Vocalz.');
-                onCancel(); // Close the upload view
-                window.location.reload(); 
+            if (files.length === 0) {
+                notify('Please select an audio file to upload.', 'error');
+                return;
             }
+
+            for (let i = 0; i < files.length; i++) {
+                const currentFile = files[i];
+                const cleanName = currentFile.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+                const trackTitle = files.length === 1 ? metadata.title : cleanName;
+
+                const formData = new FormData();
+                formData.append('audio', currentFile);
+                if (cover && mode !== 'album') formData.append('cover', cover);
+                formData.append('title', trackTitle);
+                formData.append('artist', metadata.artist);
+                formData.append('genre', metadata.genre);
+                formData.append('albumText', metadata.album || '');
+                if (createdAlbumId) formData.append('album', createdAlbumId);
+                formData.append('isPublic', 'true');
+
+                await api.post('/songs', formData);
+            }
+
+            notify(`Success! ${files.length} track(s) uploaded successfully.`);
+            onCancel(); // Close the upload view
+            window.location.reload(); 
+
         } catch (err) {
             console.error('Upload error:', err);
             notify(err.response?.data?.message || 'Failed to process request.', 'error');
@@ -147,7 +167,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 </ToggleGroupStyled>
             )}
 
-            {!songToEdit && (!file ? (
+            {!songToEdit && (files.length === 0 ? (
                 <DropZoneStyled onClick={() => fileInputRef.current?.click()}>
                     <input 
                         type="file" 
@@ -164,7 +184,9 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
             ) : (
                 <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(248,56,33,0.05)', borderRadius: '8px', border: '1px solid #f83821', marginBottom: '20px' }}>
                     <MdCheckCircle style={{ color: '#f83821', fontSize: '24px', verticalAlign: 'middle', marginRight: '10px' }} />
-                    <span style={{ color: 'white', fontWeight: '500' }}>{file.name} ready for upload</span>
+                    <span style={{ color: 'white', fontWeight: '500' }}>
+                        {files.length === 1 ? `${files[0].name} ready for upload` : `${files.length} files ready for upload`}
+                    </span>
                 </div>
             ))}
 
@@ -175,6 +197,21 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 <div className="details">
                     <p>{mode === 'album' ? 'Album' : 'Track'} Artwork</p>
                     <span>Recommended: 1000x1000px JPG or PNG</span>
+                    {!cover && metadata.album && (
+                        <span style={{ 
+                            color: '#f83821', 
+                            display: 'block', 
+                            marginTop: '6px', 
+                            fontSize: '12px', 
+                            fontWeight: '600',
+                            background: 'rgba(248, 56, 33, 0.1)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            width: 'fit-content'
+                        }}>
+                            ✨ Will inherit cover from "{metadata.album}"
+                        </span>
+                    )}
                 </div>
                 <button onClick={() => coverInputRef.current?.click()}>Choose Cover</button>
                 <input 
@@ -192,6 +229,8 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                     <input 
                         value={metadata.title} 
                         placeholder="e.g. Blinding Lights" 
+                        disabled={files.length > 1}
+                        style={files.length > 1 ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                         onChange={(e) => setMetadata(m => ({...m, title: e.target.value}))}
                     />
                 </InputGroupStyled>
@@ -231,8 +270,8 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                     </select>
                 </InputGroupStyled>
                 <datalist id="album-list">
-                    {existingAlbums?.map(name => (
-                        <option key={name} value={name} />
+                    {existingAlbums?.map(alb => (
+                        <option key={alb._id || alb} value={alb.title || alb} />
                     ))}
                 </datalist>
             </FormGridStyled>

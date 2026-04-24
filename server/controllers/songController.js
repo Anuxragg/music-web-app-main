@@ -1,6 +1,7 @@
 const multer = require('multer');
 const mongoose = require('mongoose');
 const Song = require('../models/Song');
+const Album = require('../models/Album');
 const { cloudinary } = require('../config/cloudinary');
 
 const memoryUpload = multer({ 
@@ -77,22 +78,45 @@ exports.createSong = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Audio file is required' });
     }
 
+    let finalCoverUrl = '';
+    let finalCoverPublicId = '';
+    let targetAlbumId = (album && mongoose.Types.ObjectId.isValid(album)) ? album : undefined;
+
+    // 1. Process uploaded cover if present
     if (req.files?.cover?.[0]) {
       console.log('--- Cloudinary: Uploading Cover ---');
-      coverUpload = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/covers', 'image');
-      console.log('✅ Cover Upload Success:', coverUpload.secure_url);
+      const coverUpload = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/covers', 'image');
+      finalCoverUrl = coverUpload.secure_url;
+      finalCoverPublicId = coverUpload.public_id;
+      console.log('✅ Cover Upload Success:', finalCoverUrl);
+    } 
+    // 2. Inherit cover from album if no song cover uploaded
+    else if (album || albumText) {
+      let parentAlbum;
+      if (targetAlbumId) {
+        parentAlbum = await Album.findById(targetAlbumId);
+      } else if (albumText) {
+        parentAlbum = await Album.findOne({ title: new RegExp(`^${albumText}$`, 'i') });
+      }
+
+      if (parentAlbum && parentAlbum.coverUrl) {
+        finalCoverUrl = parentAlbum.coverUrl;
+        finalCoverPublicId = parentAlbum.coverPublicId;
+        if (!targetAlbumId) targetAlbumId = parentAlbum._id;
+        console.log('📦 Inheriting cover from album:', parentAlbum.title);
+      }
     }
 
     const song = await Song.create({
       title: title || 'Untitled Track',
       artist: artist || req.user.username,
       artistRef: artistRef || undefined,
-      album: (album && mongoose.Types.ObjectId.isValid(album)) ? album : undefined,
+      album: targetAlbumId,
       albumText: albumText || '',
       audioUrl: audioUpload?.secure_url || '',
       audioPublicId: audioUpload?.public_id || '',
-      coverUrl: coverUpload?.secure_url || '',
-      coverPublicId: coverUpload?.public_id || '',
+      coverUrl: finalCoverUrl,
+      coverPublicId: finalCoverPublicId,
       duration: Number(audioUpload?.duration || duration || 0),
       genre: genre || 'Pop',
       uploadedBy: req.user._id,
@@ -133,6 +157,14 @@ exports.updateSong = async (req, res, next) => {
       const coverUpload = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/covers', 'image');
       song.coverUrl = coverUpload.secure_url;
       song.coverPublicId = coverUpload.public_id;
+    } else if (req.body.album && mongoose.Types.ObjectId.isValid(req.body.album)) {
+      // If album changed and no new cover provided, update cover from new album
+      const newAlbum = await Album.findById(req.body.album);
+      if (newAlbum && newAlbum.coverUrl) {
+        song.coverUrl = newAlbum.coverUrl;
+        song.coverPublicId = newAlbum.coverPublicId;
+        song.album = newAlbum._id;
+      }
     }
 
     await song.save();
@@ -151,7 +183,18 @@ exports.deleteSong = async (req, res, next) => {
       await cloudinary.uploader.destroy(song.audioPublicId, { resource_type: 'video' });
     }
     if (song.coverPublicId) {
-      await cloudinary.uploader.destroy(song.coverPublicId, { resource_type: 'image' });
+      // Check if any other song or album uses this cover image before deleting from Cloudinary
+      const [otherSong, albumWithCover] = await Promise.all([
+        Song.findOne({ coverPublicId: song.coverPublicId, _id: { $ne: song._id } }),
+        Album.findOne({ coverPublicId: song.coverPublicId })
+      ]);
+
+      if (!otherSong && !albumWithCover) {
+        await cloudinary.uploader.destroy(song.coverPublicId, { resource_type: 'image' });
+        console.log('🗑️ Cloudinary cover deleted.');
+      } else {
+        console.log('ℹ️ Skipping Cloudinary cover deletion - image is shared.');
+      }
     }
 
     await song.deleteOne();

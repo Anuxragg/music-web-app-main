@@ -132,12 +132,17 @@ exports.updateArtistByDisplayName = async (req, res, next) => {
       { 
         $set: updateData,
         $setOnInsert: { 
-          bio: `Artist profile for ${displayName}`,
-          avatar: updateData.avatar || '/media/default_artist.png'
+          bio: `Artist profile for ${displayName}`
         }
       },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
+
+    // If it was newly inserted and no avatar was provided in updateData, set default avatar
+    if (!updateData.avatar && artist.avatar === '') {
+      artist.avatar = '/media/default_artist.png';
+      await artist.save();
+    }
 
     res.status(200).json({ success: true, data: artist });
   } catch (error) {

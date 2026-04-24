@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 
 const Album = require('./models/Album');
@@ -6,7 +7,11 @@ const Song = require('./models/Song');
 
 async function fix() {
   try {
-    await mongoose.connect('mongodb+srv://anuragpal9002_db_user:H5EAHltoNLgUjBun@musiccluster.gpvwl3i.mongodb.net/?appName=MusicCluster');
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('MONGO_URI is not defined in environment variables');
+    }
+    await mongoose.connect(mongoUri);
 
     const albums = await Album.find({ artist: /Daniel/i });
     console.log('Albums:', albums.map(a => a.title + ' by ' + a.artist));

@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react'
+import defaultArtistImg from '../../media/voj.jpg';
 import AudioPlayer from '../Audio-Player/audioPlayer';
 import api from '../../services/api';
 import {
@@ -41,6 +42,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     const [selectedGenre, setSelectedGenre] = useState(null);
     const [selectedAlbum, setSelectedAlbum] = useState(null);
     const [liveSongs, setLiveSongs] = useState([]);
+    const [shuffledHomeSongs, setShuffledHomeSongs] = useState([]);
     const [registeredAlbums, setRegisteredAlbums] = useState([]);
     const [allArtists, setAllArtists] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     const fetchSongs = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/songs?limit=50');
+            const res = await api.get('/songs?limit=1000');
             if (res.data?.success) {
                 const normalized = res.data.data.map(song => ({
                     id: song._id,
@@ -97,10 +99,11 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                     albumText: song.albumText || '',
                     genre: song.genre || 'Other',
                     duration: song.durationFormatted || formatTime(song.duration),
-                    songImage: song.coverUrl,
+                    songImage: song.coverUrl || '/m-app-logo.png',
                     audioUrl: song.audioUrl
                 }));
                 setLiveSongs(normalized);
+                setShuffledHomeSongs([...normalized].sort(() => Math.random() - 0.5).slice(0, 50));
             }
         } catch (err) {
             console.error("Error fetching live library", err);
@@ -134,9 +137,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 ? `/artists/${artistId}`
                 : `/artists/name/${encodeURIComponent(artistName)}`;
 
-            const res = await api.patch(endpoint, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const res = await api.patch(endpoint, formData);
 
             if (res.data?.success) {
                 notify(`Success! Photo updated for ${artistName}.`);
@@ -159,9 +160,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             formData.append('description', newPlaylistDescription);
             if (newPlaylistCover) formData.append('cover', newPlaylistCover);
 
-            const res = await api.post('/playlists', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const res = await api.post('/playlists', formData);
             if (res.data?.success) {
                 setUserPlaylists([...userPlaylists, res.data.data]);
                 setIsCreatingPlaylist(false);
@@ -254,6 +253,36 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             }
         }
     }
+
+    const handleDeleteAlbumFully = async () => {
+        if (!selectedAlbum) return;
+        if (!window.confirm(`Are you sure you want to delete the entire album "${selectedAlbum}" and ALL its songs? This cannot be undone.`)) return;
+
+        setGlobalLoading('Deleting album and all its songs...');
+        try {
+            const songsToDelete = liveSongs.filter(s => s.albumText === selectedAlbum);
+            for (const song of songsToDelete) {
+                await api.delete(`/songs/${song.id}`);
+            }
+
+            const actualAlbum = registeredAlbums.find(a => a.title === selectedAlbum);
+            if (actualAlbum) {
+                await api.delete(`/albums/${actualAlbum._id}`);
+            }
+
+            notify(`Album "${selectedAlbum}" deleted successfully!`);
+            
+            setLiveSongs(prev => prev.filter(s => s.albumText !== selectedAlbum));
+            setRegisteredAlbums(prev => prev.filter(a => a.title !== selectedAlbum));
+            setSelectedAlbum(null);
+            setCurrentView('Home');
+        } catch (err) {
+            console.error('Failed to delete album completely:', err);
+            notify('Failed to delete album.', 'error');
+        } finally {
+            setGlobalLoading(null);
+        }
+    };
 
     const handleEditClick = (e, song) => {
         e.stopPropagation();
@@ -369,7 +398,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         } finally { setSaveLoading(false); }
     };
 
-    let displayedSongs = liveSongs;
+    let displayedSongs = currentView === 'Home' ? (shuffledHomeSongs.length > 0 ? shuffledHomeSongs : liveSongs.slice(0, 50)) : liveSongs;
     let heading = currentView;
     let isArtistView = false;
     let artistsList = [];
@@ -415,7 +444,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             const uniqueArtistNames = Array.from(new Set(liveSongs.map(song => song.artist)));
             artistsList = uniqueArtistNames.map(name => {
                 const profile = allArtists.find(a => a.displayName === name);
-                return { name, image: profile?.avatar || '/media/default_artist.png', id: profile?._id };
+                return { name, image: profile?.avatar || defaultArtistImg, id: profile?._id };
             });
         }
     } else if (currentView === 'Albums' || currentView === 'Album') {
@@ -429,7 +458,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             const live = liveSongs.find(s => s.albumText === name);
             return {
                 name,
-                image: registered?.coverUrl || live?.songImage || '/media/default_album.png',
+                image: registered?.coverUrl || live?.songImage || '/m-app-logo.png',
                 isAlbum: true,
                 description: registered?.artist || live?.artist || 'Unknown Artist'
             };
@@ -439,14 +468,14 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         heading = 'Playlists';
         const likedSongsCard = {
             name: 'Liked Songs',
-            image: '/media/liked_songs_cover.png',
+            image: '/m-app-logo.png',
             isLikedSongs: true,
             isPlaylist: true
         };
 
         artistsList = [likedSongsCard, ...userPlaylists.map(p => ({
             name: p.name,
-            image: p.coverUrl || '/media/default_playlist.png',
+            image: p.coverUrl || '/m-app-logo.png',
             id: p._id,
             isPlaylist: true,
             playlistObj: p
@@ -549,9 +578,9 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 ) : isAlbumView ? (() => {
                     const actualAlbum = selectedAlbum ? registeredAlbums.find(a => a.title === selectedAlbum) : null;
                     const metaArtist = actualAlbum ? actualAlbum.artist : (selectedPlaylist ? 'Playlist Owner' : displayedSongs[0]?.artist || 'Various Artists');
-                    const metaImage = actualAlbum?.coverUrl || selectedPlaylist?.coverUrl || displayedSongs[0]?.songImage || '/media/default_album.png';
+                    const metaImage = actualAlbum?.coverUrl || selectedPlaylist?.coverUrl || displayedSongs[0]?.songImage || '/m-app-logo.png';
                     const artistProfile = allArtists.find(a => a.displayName === metaArtist);
-                    const metaIcon = artistProfile?.avatar || '/media/voj.jpg';
+                    const metaIcon = artistProfile?.avatar || defaultArtistImg;
                     const metaYear = actualAlbum?.releaseDate ? new Date(actualAlbum.releaseDate).getFullYear() : '2024';
 
                     return (
@@ -604,6 +633,9 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
 
                                     {(((currentView === 'Playlist' || currentView === 'Playlists') && (selectedPlaylist?.owner === user?.id || selectedPlaylist?.owner?._id === user?.id)) || ((currentView === 'Album' || currentView === 'Albums') && user?.role === 'admin' && selectedAlbum)) && (
                                         <button className="icon-action" onClick={() => setIsQuickAddOpen(true)}><MdAddCircleOutline /></button>
+                                    )}
+                                    {((currentView === 'Album' || currentView === 'Albums') && user?.role === 'admin' && selectedAlbum) && (
+                                        <button className="icon-action" onClick={handleDeleteAlbumFully} style={{ color: '#ff4d4d' }} title="Delete Album Fully"><MdDelete /></button>
                                     )}
                                     <div className="search-action">
                                         <MdSearch />
@@ -660,7 +692,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                             const profile = allArtists.find(a => a.displayName === name);
                                             return (
                                                 <div key={name} className="artist-row" onClick={() => setSelectedArtist(name)}>
-                                                    <img src={profile?.avatar || '/media/voj.jpg'} alt="" />
+                                                    <img src={profile?.avatar || defaultArtistImg} alt="" />
                                                     <p>{name}</p>
                                                 </div>
                                             );
@@ -671,7 +703,13 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                         </AlbumViewContainerStyled>
                     );
                 })() : isUploadView ? (
-                    <UploadSongs user={user} notify={notify} setGlobalLoading={setGlobalLoading} existingAlbums={Array.from(new Set(liveSongs.map(s => s.albumText).filter(Boolean)))} onCancel={() => setCurrentView('Home')} />
+                    <UploadSongs 
+                        user={user} 
+                        notify={notify} 
+                        setGlobalLoading={setGlobalLoading} 
+                        existingAlbums={registeredAlbums} 
+                        onCancel={() => setCurrentView('Home')} 
+                    />
                 ) : isExploreGrid ? (
                     <GenreGridStyled>
                         {genres.map((g) => (
@@ -685,7 +723,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                     </GenreGridStyled>
                 ) : isArtistProfileView ? (() => {
                     const artistInfo = allArtists.find(a => a.displayName === selectedArtist);
-                    const artistImage = artistInfo?.avatar || '/media/voj.jpg';
+                    const artistImage = artistInfo?.avatar || defaultArtistImg;
                     const artistAlbums = Array.from(new Set(liveSongs.filter(s => s.artist === selectedArtist).map(s => s.albumText).filter(Boolean)));
 
                     return (
@@ -708,7 +746,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                         return (
                                             <AlbumCardStyled key={albumName} onClick={() => { setSelectedAlbum(albumName); }} style={{ minWidth: 'unset', maxWidth: 'unset' }}>
                                                 <div className="album-image-container" style={{ borderRadius: '8px' }}>
-                                                    <img src={registered?.coverUrl || albumSong?.songImage || '/media/default_album.png'} alt={albumName} className="album-image" />
+                                                    <img src={registered?.coverUrl || albumSong?.songImage || '/m-app-logo.png'} alt={albumName} className="album-image" />
                                                     <button className="play-button-overlay" onClick={(e) => { e.stopPropagation(); handleSongClick(albumSong, liveSongs.filter(s => s.albumText === albumName)); }}><IoPlay /></button>
                                                 </div>
                                                 <p className="album-title">{albumName}</p>
@@ -762,8 +800,12 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 </div>
                                 {user?.role === 'admin' && !item.isPlaylist && !item.isAlbum && !item.isLikedSongs && (
                                     <div style={{ marginTop: '10px' }}>
-                                        <input type="file" id={`artist-p-${item.name}`} hidden onChange={(e) => handleUpdateArtistAvatar(item.id, item.name, e.target.files[0])} />
-                                        <button onClick={(e) => { e.stopPropagation(); document.getElementById(`artist-p-${item.name}`).click(); }} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '15px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>Edit Photo</button>
+                                        <label style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '15px', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'inline-block' }} onClick={(e) => e.stopPropagation()}>
+                                            Edit Photo
+                                            <input type="file" hidden onChange={(e) => {
+                                                handleUpdateArtistAvatar(item.id, item.name, e.target.files[0]);
+                                            }} />
+                                        </label>
                                     </div>
                                 )}
                             </AlbumCardStyled>
@@ -796,7 +838,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                             </div>
                             <div className="modal-body">
                                 <div className="cover-edit-container" onClick={() => document.getElementById('new-playlist-cover').click()}>
-                                    <img src={newPlaylistPreview || '/media/default_playlist.png'} alt="Cover" />
+                                    <img src={newPlaylistPreview || '/m-app-logo.png'} alt="Cover" />
                                     <div className="overlay">
                                         <MdModeEdit />
                                         <span>Choose photo</span>
@@ -869,7 +911,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                             </div>
                             <div className="modal-body">
                                 <div className="cover-edit-container" onClick={() => document.getElementById('edit-playlist-cover').click()}>
-                                    <img src={editPlaylistPreview || selectedPlaylist.coverUrl || '/media/default_playlist.png'} alt="Cover" />
+                                    <img src={editPlaylistPreview || selectedPlaylist.coverUrl || '/m-app-logo.png'} alt="Cover" />
                                     <div className="overlay">
                                         <MdModeEdit />
                                         <span>Choose photo</span>
