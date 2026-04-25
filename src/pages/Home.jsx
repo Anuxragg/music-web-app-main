@@ -50,6 +50,7 @@ function Home() {
           currentView={currentView}
           setCurrentView={setCurrentView}
           searchResults={searchResults}
+          onSearch={setSearchResults}
         />
       </div>
     </div>

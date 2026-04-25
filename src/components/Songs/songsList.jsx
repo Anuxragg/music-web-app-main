@@ -10,9 +10,12 @@ import {
     AlbumViewContainerStyled, AlbumLeftColStyled, AlbumRightColStyled, AlbumHeaderInfoStyled,
     AlbumActionsRowStyled, AlbumTracklistHeaderStyled, AlbumTrackRowStyled, AlbumGenreGridStyled, AlbumFeaturedArtistsStyled,
     ArtistProfileContainerStyled, ArtistBannerStyled, ArtistStatsStyled, ArtistActionsStyled, ArtistProfileTabsStyled, ArtistSectionStyled,
-    EditPlaylistModalOverlayStyled, EditPlaylistModalStyled, SkeletonBox
+    EditPlaylistModalOverlayStyled, EditPlaylistModalStyled, SkeletonBox, SongMenuStyled
 } from './songsList.styled';
-import { MdFavoriteBorder, MdFavorite, MdMusicNote, MdRecordVoiceOver, MdPlayArrow, MdOutlineFileDownload, MdMoreHoriz, MdAddCircleOutline, MdShuffle, MdLoop, MdSearch, MdVolumeUp, MdVolumeMute, MdPlaylistAdd, MdPlaylistPlay, MdDevices, MdQueueMusic, MdOpenInFull, MdDelete, MdModeEdit, MdImage, MdOutlineFileUpload, MdAdd, MdAlbum, MdClose } from 'react-icons/md';
+import { 
+    MdPlaylistAdd, MdFavorite, MdFavoriteBorder, MdMoreHoriz, MdSearch, MdClose, 
+    MdCloudUpload, MdArrowBack, MdExpandMore, MdExpandLess, MdDelete, MdEdit, MdMusicNote, MdRecordVoiceOver, MdPlayArrow, MdOutlineFileDownload, MdShuffle, MdLoop, MdVolumeUp, MdVolumeMute, MdPlaylistPlay, MdDevices, MdQueueMusic, MdOpenInFull, MdModeEdit, MdImage, MdOutlineFileUpload, MdAdd, MdAlbum, MdAddCircleOutline 
+} from 'react-icons/md';
 import { IoPlay, IoPause, IoShuffleOutline, IoRepeatOutline, IoArrowBack } from "react-icons/io5";
 import { FiShare } from "react-icons/fi";
 import { GiLovers, GiBoombox, GiViolin, GiCarKey } from 'react-icons/gi';
@@ -20,7 +23,7 @@ import UploadSongs from './upload';
 import Toast from '../Feedback/Toast';
 import Loader from '../Feedback/Loader';
 
-export default function SongsList({ user, favorites, setFavorites, currentView, setCurrentView, searchResults }) {
+export default function SongsList({ user, favorites, setFavorites, currentView, setCurrentView, searchResults, onSearch }) {
     const formatTime = (seconds) => {
         const total = Math.floor(Number(seconds || 0));
         if (total === 0) return '0:00';
@@ -65,6 +68,15 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     const [saveLoading, setSaveLoading] = useState(false);
     const [globalLoading, setGlobalLoading] = useState(null); // stores message
     const [toast, setToast] = useState(null); // { message, type }
+    const [showAllArtistSongs, setShowAllArtistSongs] = useState(false);
+    const [menuSongId, setMenuSongId] = useState(null);
+
+    // Close menu on click outside
+    useEffect(() => {
+        const handleClickOutside = () => setMenuSongId(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, []);
 
     const notify = (message, type = 'success') => {
         setToast({ message, type });
@@ -151,6 +163,44 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         }
     }
 
+    const handleDeleteSong = async (songId) => {
+        setGlobalLoading("Deleting track...");
+        try {
+            const res = await api.delete(`/songs/${songId}`);
+            if (res.data?.success) {
+                notify("Track deleted successfully!");
+                setEditingSong(null);
+                fetchLibraryData();
+            }
+        } catch (err) {
+            console.error("Error deleting song", err);
+            notify("Failed to delete track. Admins only.", "error");
+        } finally {
+            setGlobalLoading(null);
+        }
+    };
+
+    const renderSongMenu = (song) => {
+        if (menuSongId !== song.id) return null;
+        
+        return (
+            <SongMenuStyled onClick={(e) => e.stopPropagation()}>
+                <button onClick={(e) => { e.stopPropagation(); setEditingSong(song); setMenuSongId(null); }}>
+                    <MdEdit /> Edit Song
+                </button>
+                <button className="delete" onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (window.confirm("Are you sure you want to delete this track permanently?")) {
+                        handleDeleteSong(song.id);
+                    }
+                    setMenuSongId(null);
+                }}>
+                    <MdDelete /> Delete Track
+                </button>
+            </SongMenuStyled>
+        );
+    };
+
     const handleCreatePlaylist = async () => {
         if (!newPlaylistName.trim()) return;
         setSaveLoading(true);
@@ -206,7 +256,8 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         if (currentView !== 'Discover') setSelectedGenre(null);
         setEditingSong(null);
         setIsAddingToAlbum(null);
-    }, [currentView]);
+        setShowAllArtistSongs(false);
+    }, [currentView, selectedArtist]);
 
     const handleSongClick = (song, contextPlaylist) => {
         setClickedSong(song);
@@ -493,7 +544,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     const isArtistProfileView = currentView === 'Artists' && selectedArtist && !selectedAlbum && !selectedPlaylist;
     const isExploreGrid = currentView === 'Discover' && !selectedGenre;
     const isHomeView = currentView === 'Home';
-    const isAlbumView = selectedAlbum || selectedPlaylist;
+    const isAlbumView = selectedAlbum || selectedPlaylist || selectedGenre;
     const isUploadView = currentView === 'Upload';
 
     const handleNext = () => {
@@ -519,7 +570,20 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     return (
         <>
             <SongsListWrapperStyled>
-                {(!isHomeView && !isAlbumView) && <ViewHeadingStyled>{heading}</ViewHeadingStyled>}
+                {(!isHomeView && !isAlbumView) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+                        <button 
+                            onClick={() => { 
+                                if (searchResults) onSearch(null); 
+                                else if (currentView !== 'Home') setCurrentView('Home');
+                            }}
+                            style={{ background: 'none', border: 'none', color: 'white', opacity: 0.7, cursor: 'pointer', padding: 0, display: 'flex' }}
+                        >
+                            <IoArrowBack size={28} />
+                        </button>
+                        <ViewHeadingStyled style={{ margin: 0 }}>{heading}</ViewHeadingStyled>
+                    </div>
+                )}
 
                 {isHomeView ? (
                     <>
@@ -530,7 +594,11 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                             </button>
                         </div>
                         <TopSongsGridStyled>
-                            {loading ? Array(10).fill(0).map((_, i) => <SkeletonBox key={i} $width="100%" $height="60px" $borderRadius="8px" style={{ marginBottom: '10px' }} />) : (
+                            {loading ? (
+                                Array(10).fill(0).map((_, i) => (
+                                    <SkeletonBox key={i} $width="100%" $height="60px" $borderRadius="8px" style={{ marginBottom: '10px' }} />
+                                ))
+                            ) : liveSongs.length > 0 ? (
                                 liveSongs.slice(0, 10).map((song, index) => (
                                     <SongContainerStyled key={song.id} onClick={() => handleSongClick(song, liveSongs.slice(0, 10))}>
                                         <SongDetailsContainerStyled>
@@ -542,9 +610,26 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                             <p>{song.duration}</p>
                                             <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
                                             <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
+                                            {isOwner(song) && (
+                                                <div style={{ position: 'relative' }}>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                        style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                                    >
+                                                        <MdMoreHoriz fontSize="20px" />
+                                                    </button>
+                                                    {renderSongMenu(song)}
+                                                </div>
+                                            )}
                                         </SongDurationContainerStyled>
                                     </SongContainerStyled>
                                 ))
+                            ) : (
+                                <div style={{ gridColumn: '1 / -1', padding: '60px 20px', textAlign: 'center', opacity: 0.5 }}>
+                                    <MdMusicNote size={48} style={{ marginBottom: '15px' }} />
+                                    <p style={{ fontSize: '18px', fontWeight: '500', margin: 0 }}>No songs found</p>
+                                    <p style={{ fontSize: '14px', marginTop: '8px' }}>Start by uploading your first track!</p>
+                                </div>
                             )}
                         </TopSongsGridStyled>
 
@@ -662,8 +747,19 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                         </div>
                                         <div className="col-actions">
                                             <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
-                                            {((currentView === 'Playlist' && selectedPlaylist?.owner === user?.id) || (currentView === 'Album' && user?.role === 'admin')) && (
-                                                <button onClick={(e) => handleRemoveFromPlaylist(e, song.id)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer' }}><MdDelete /></button>
+                                            {((currentView === 'Playlist' && (selectedPlaylist?.owner === user?.id || selectedPlaylist?.owner?._id === user?.id)) || (currentView === 'Album' && user?.role === 'admin')) && (
+                                                <button onClick={(e) => handleRemoveFromPlaylist(e, song.id)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer' }} title="Remove from collection"><MdDelete /></button>
+                                            )}
+                                            {user?.role === 'admin' && (
+                                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                        style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                                    >
+                                                        <MdMoreHoriz fontSize="20px" />
+                                                    </button>
+                                                    {renderSongMenu(song)}
+                                                </div>
                                             )}
                                         </div>
                                     </AlbumTrackRowStyled>
@@ -708,6 +804,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                         notify={notify} 
                         setGlobalLoading={setGlobalLoading} 
                         existingAlbums={registeredAlbums} 
+                        allSongs={liveSongs}
                         onCancel={() => setCurrentView('Home')} 
                     />
                 ) : isExploreGrid ? (
@@ -724,10 +821,18 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 ) : isArtistProfileView ? (() => {
                     const artistInfo = allArtists.find(a => a.displayName === selectedArtist);
                     const artistImage = artistInfo?.avatar || defaultArtistImg;
-                    const artistAlbums = Array.from(new Set(liveSongs.filter(s => s.artist === selectedArtist).map(s => s.albumText).filter(Boolean)));
+                    const artistSongs = liveSongs.filter(s => s.artist === selectedArtist);
+                    const artistAlbums = Array.from(new Set(artistSongs.map(s => s.albumText).filter(Boolean)));
+                    const displayedArtistSongs = showAllArtistSongs ? artistSongs : artistSongs.slice(0, 5);
 
                     return (
                         <ArtistProfileContainerStyled style={{ marginTop: '-40px' }}>
+                            <button 
+                                onClick={() => { setSelectedArtist(null); }}
+                                style={{ background: 'none', border: 'none', color: 'white', opacity: 0.7, cursor: 'pointer', marginBottom: '10px', padding: 0, display: 'flex', alignSelf: 'flex-start' }}
+                            >
+                                <IoArrowBack size={28} />
+                            </button>
                             <ArtistBannerStyled $image={artistImage}>
                                 <h1>{selectedArtist}</h1>
                             </ArtistBannerStyled>
@@ -737,17 +842,71 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 <button>About</button>
                             </ArtistProfileTabsStyled>
 
+                            <ArtistSectionStyled style={{ marginTop: '0' }}>
+                                <h2>Top songs</h2>
+                                <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '10px' }}>
+                                    {displayedArtistSongs.map((song, index) => (
+                                        <SongContainerStyled 
+                                            key={song.id} 
+                                            onClick={() => handleSongClick(song, artistSongs)} 
+                                        >
+                                            <SongDetailsContainerStyled>
+                                                <SongIndexStyled>{clickedSong?.id === song.id ? <IoPlay style={{ color: '#f83821' }} /> : index + 1}</SongIndexStyled>
+                                                <SongImgContainerStyled><img src={song.songImage} alt="" /></SongImgContainerStyled>
+                                                <SongNameArtistStyled><p>{song.songName}</p><p>{song.artist}</p></SongNameArtistStyled>
+                                            </SongDetailsContainerStyled>
+                                            <SongDurationContainerStyled>
+                                                <p>{song.duration}</p>
+                                                <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
+                                                <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
+                                                {isOwner(song) && (
+                                                    <div style={{ position: 'relative' }}>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                            style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                                        >
+                                                            <MdMoreHoriz fontSize="20px" />
+                                                        </button>
+                                                        {renderSongMenu(song)}
+                                                    </div>
+                                                )}
+                                            </SongDurationContainerStyled>
+                                        </SongContainerStyled>
+                                    ))}
+                                </div>
+                                {artistSongs.length > 5 && (
+                                    <button 
+                                        onClick={() => setShowAllArtistSongs(!showAllArtistSongs)}
+                                        style={{ 
+                                            background: 'none', 
+                                            color: '#b3b3b3', 
+                                            border: 'none', 
+                                            padding: '8px 16px', 
+                                            cursor: 'pointer', 
+                                            fontWeight: '700', 
+                                            fontSize: '14px',
+                                            transition: 'color 0.2s'
+                                        }}
+                                        onMouseOver={(e) => e.target.style.color = 'white'}
+                                        onMouseOut={(e) => e.target.style.color = '#b3b3b3'}
+                                    >
+                                        {showAllArtistSongs ? 'Show less' : 'Show all'}
+                                    </button>
+                                )}
+                            </ArtistSectionStyled>
 
-                            <ArtistSectionStyled style={{ marginTop: '-10px' }}>
+                            <ArtistSectionStyled>
+                                <h2>Albums</h2>
                                 <div className="album-grid">
                                     {artistAlbums.map(albumName => {
-                                        const albumSong = liveSongs.find(s => s.albumText === albumName && s.artist === selectedArtist);
+                                        const albumSongsList = liveSongs.filter(s => s.albumText === albumName && s.artist === selectedArtist);
+                                        const albumSong = albumSongsList[0];
                                         const registered = registeredAlbums.find(a => a.title === albumName);
                                         return (
                                             <AlbumCardStyled key={albumName} onClick={() => { setSelectedAlbum(albumName); }} style={{ minWidth: 'unset', maxWidth: 'unset' }}>
                                                 <div className="album-image-container" style={{ borderRadius: '8px' }}>
                                                     <img src={registered?.coverUrl || albumSong?.songImage || '/m-app-logo.png'} alt={albumName} className="album-image" />
-                                                    <button className="play-button-overlay" onClick={(e) => { e.stopPropagation(); handleSongClick(albumSong, liveSongs.filter(s => s.albumText === albumName)); }}><IoPlay /></button>
+                                                    <button className="play-button-overlay" onClick={(e) => { e.stopPropagation(); handleSongClick(albumSong, albumSongsList); }}><IoPlay /></button>
                                                 </div>
                                                 <p className="album-title">{albumName}</p>
                                                 <div className="album-info-row">
@@ -822,7 +981,17 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 <p>{song.duration}</p>
                                 <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
                                 <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
-                                {isOwner(song) && <button onClick={(e) => handleEditClick(e, song)} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdMoreHoriz fontSize="20px" /></button>}
+                                {isOwner(song) && (
+                                    <div style={{ position: 'relative' }}>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                            style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                        >
+                                            <MdMoreHoriz fontSize="20px" />
+                                        </button>
+                                        {renderSongMenu(song)}
+                                    </div>
+                                )}
                             </SongDurationContainerStyled>
                         </SongContainerStyled>
                     ))
@@ -900,7 +1069,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                     </div>
                 )}
 
-                {editingSong && <UploadSongs user={user} songToEdit={editingSong} notify={notify} setGlobalLoading={setGlobalLoading} existingAlbums={Array.from(new Set(liveSongs.map(s => s.albumText).filter(Boolean)))} onCancel={() => setEditingSong(null)} />}
+                {editingSong && <UploadSongs key={editingSong.id} user={user} songToEdit={editingSong} notify={notify} setGlobalLoading={setGlobalLoading} existingAlbums={registeredAlbums} allSongs={liveSongs} onDelete={handleDeleteSong} onCancel={() => setEditingSong(null)} />}
 
                 {isEditingPlaylist && selectedPlaylist && (
                     <EditPlaylistModalOverlayStyled onClick={() => setIsEditingPlaylist(false)}>

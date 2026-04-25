@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { useAuth } from '../context/AuthContext'; 
@@ -207,13 +207,19 @@ const TILES = [
  
 export default function AuthPage() {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
   const [mode, setMode]   = useState('login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [form, setForm]   = useState({
     username: '', email: '', password: '', confirmPassword: '',
   });
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
  
   const isRegister = mode === 'register';
   const set = (key) => (e) => { setForm(f => ({ ...f, [key]: e.target.value })); setError(''); };
@@ -257,14 +263,14 @@ export default function AuthPage() {
         await login(body);
       }
 
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || 'Network error. Make sure the server is running.');
     } finally {
       setLoading(false);
     }
   };
- 
+
   const onKey = (e) => { if (e.key === 'Enter') handleSubmit(); };
  
   return (

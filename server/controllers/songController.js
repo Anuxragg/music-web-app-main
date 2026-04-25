@@ -78,11 +78,11 @@ exports.createSong = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Audio file is required' });
     }
 
-    let finalCoverUrl = '';
-    let finalCoverPublicId = '';
+    let finalCoverUrl = req.body.coverUrl || '';
+    let finalCoverPublicId = req.body.coverPublicId || '';
     let targetAlbumId = (album && mongoose.Types.ObjectId.isValid(album)) ? album : undefined;
 
-    // 1. Process uploaded cover if present
+    // 1. Process uploaded cover if present (takes priority)
     if (req.files?.cover?.[0]) {
       console.log('--- Cloudinary: Uploading Cover ---');
       const coverUpload = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/covers', 'image');
@@ -90,8 +90,8 @@ exports.createSong = async (req, res, next) => {
       finalCoverPublicId = coverUpload.public_id;
       console.log('✅ Cover Upload Success:', finalCoverUrl);
     } 
-    // 2. Inherit cover from album if no song cover uploaded
-    else if (album || albumText) {
+    // 2. Inherit cover from album if no song cover or URL provided
+    else if (!finalCoverUrl && (album || albumText)) {
       let parentAlbum;
       if (targetAlbumId) {
         parentAlbum = await Album.findById(targetAlbumId);

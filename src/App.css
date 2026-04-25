@@ -56,19 +56,13 @@ body {
 }
 
 /* Responsive Overrides */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .App {
     flex-direction: column;
   }
 
   .app-comp-wrap {
-    margin-top: 0;
-    padding-bottom: 140px;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-comp-wrap {
+    margin-top: 70px;
     padding-bottom: 200px;
   }
 }

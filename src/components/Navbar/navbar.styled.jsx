@@ -15,11 +15,12 @@ export const NavContainerStyled = styled.div`
 
   @media (max-width: 768px) {
     width: ${props => props.$collapsed ? '78px' : '200px'};
+    height: 100vh;
   }
 
   @media (max-width: 480px) {
     width: 100%;
-    height: ${props => props.$menuOpen ? '100vh' : '60px'};
+    height: ${props => props.$menuOpen ? '100vh' : '70px'};
     position: fixed;
     top: 0;
     left: 0;
@@ -27,9 +28,11 @@ export const NavContainerStyled = styled.div`
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: ${props => props.$menuOpen ? '0' : '0 15px'};
+    padding: 0;
     overflow-y: ${props => props.$menuOpen ? 'auto' : 'visible'};
     transition: height 0.3s ease;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 `
 
@@ -165,6 +168,9 @@ export const TopNavContainerStyled = styled.nav`
   @media (max-width: 480px) {
     padding: 10px 15px;
     height: 60px;
+    position: sticky;
+    top: 0;
+    background-color: #121212;
   }
 `;
 

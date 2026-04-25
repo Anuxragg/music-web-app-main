@@ -48,11 +48,12 @@ export const ViewHeadingStyled = styled.h1`
 export const SongContainerStyled = styled.div`
   width: 100%;
   height: 60px;
-  margin-top: 15px;
+  margin-top: 0;
   padding: 0 20px 0 20px;
-  background-color: #121212;
+  background-color: transparent;
   color: white;
-  border-radius: 5px;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -61,7 +62,7 @@ export const SongContainerStyled = styled.div`
   position: relative;
 
   &:hover{
-    background-color: #1A1A1A;
+    background-color: rgba(255,255,255,0.05);
   }
 
   @media (max-width: 768px) {
@@ -235,7 +236,7 @@ export const TopSongsGridStyled = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   column-gap: 30px;
-  row-gap: 5px;
+  row-gap: 0;
   margin-bottom: 40px;
 
   @media (max-width: 1024px) {
@@ -274,8 +275,8 @@ export const AlbumsScrollContainerStyled = styled.div`
 `;
 
 export const AlbumCardStyled = styled.div`
-  min-width: 165px;
-  max-width: 165px;
+  min-width: 200px;
+  max-width: 200px;
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -330,7 +331,7 @@ export const AlbumCardStyled = styled.div`
 
   .album-title {
     color: white;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
     margin: 0;
     white-space: nowrap;
@@ -346,7 +347,7 @@ export const AlbumCardStyled = styled.div`
     gap: 6px;
     margin-top: 8px;
     color: #b3b3b3;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
   }
 
@@ -989,11 +990,59 @@ export const ArtistSectionStyled = styled.section`
 
   .album-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 24px;
   }
 
   @media (max-width: 768px) {
     padding: 0 20px;
   }
-`
+`;
+
+export const SongMenuStyled = styled.div`
+  position: absolute;
+  right: 20px;
+  top: 50px;
+  background: #181818;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px;
+  z-index: 1000;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  button {
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    padding: 10px 12px;
+    border-radius: 4px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    width: 100%;
+
+    &:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    &.delete {
+      color: #ff4d4d;
+      &:hover {
+        background: rgba(255,77,77,0.1);
+      }
+    }
+
+    svg {
+      font-size: 18px;
+    }
+  }
+`;

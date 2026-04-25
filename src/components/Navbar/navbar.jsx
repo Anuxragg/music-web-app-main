@@ -16,7 +16,7 @@ const AppleSidebarIcon = () => (
 
 export default function Navbar({ currentView, setCurrentView }) {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [collapsed, setCollapsed] = useState(true);
+    const [collapsed, setCollapsed] = useState(false);
     const [isDraggingEdge, setIsDraggingEdge] = useState(false);
     const [dragStartX, setDragStartX] = useState(0);
 

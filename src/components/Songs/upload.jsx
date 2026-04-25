@@ -7,10 +7,11 @@ import {
 } from './upload.styled';
 import { MdCloudUpload, MdImage, MdCheckCircle, MdLibraryMusic, MdAlbum } from 'react-icons/md';
 
-export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, onDelete, existingAlbums, notify, setGlobalLoading }) {
+export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, onDelete, existingAlbums, allSongs, notify, setGlobalLoading }) {
     const [mode, setMode] = useState('single'); // 'single' or 'album'
     const [files, setFiles] = useState([]);
     const [cover, setCover] = useState(null);
+    const [libraryCover, setLibraryCover] = useState(null); // { url, publicId }
     const [preview, setPreview] = useState(songToEdit?.coverUrl || null);
     const [metadata, setMetadata] = useState({
         title: songToEdit?.songName || '',
@@ -20,6 +21,32 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
     });
 
     const [loading, setLoading] = useState(false);
+
+    // Synchronize state when songToEdit changes (fixing stale edit data)
+    useEffect(() => {
+        if (songToEdit) {
+            setPreview(songToEdit.coverUrl || songToEdit.songImage || null);
+            setMetadata({
+                title: songToEdit.songName || '',
+                artist: songToEdit.artist || user?.username || '',
+                album: songToEdit.albumText || '',
+                genre: songToEdit.genre || 'Pop'
+            });
+            setLibraryCover(null);
+            setCover(null);
+        } else {
+            // Reset for new upload
+            setPreview(null);
+            setMetadata({
+                title: '',
+                artist: user?.username || '',
+                album: prefillAlbum || '',
+                genre: 'Pop'
+            });
+            setLibraryCover(null);
+            setCover(null);
+        }
+    }, [songToEdit, user, prefillAlbum]);
     
     const fileInputRef = useRef(null);
     const coverInputRef = useRef(null);
@@ -48,12 +75,37 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
         }
     };
 
+    // Unique covers from library
+    const getUniqueCovers = () => {
+        const albumCovers = (existingAlbums || []).map(a => ({ url: a.coverUrl, publicId: a.coverPublicId, name: a.title }));
+        const songCovers = (allSongs || []).map(s => ({ url: s.songImage, publicId: s.coverPublicId, name: s.songName }));
+        const all = [...albumCovers, ...songCovers].filter(c => c.url && !c.url.includes('default_'));
+        
+        // Deduplicate by URL
+        const unique = [];
+        const seen = new Set();
+        for (const item of all) {
+            if (!seen.has(item.url)) {
+                seen.add(item.url);
+                unique.push(item);
+            }
+        }
+        return unique.slice(0, 12); // Show recent 12
+    };
+
     const handleCoverChange = (e) => {
         const droppedCover = e.target.files[0];
         if (droppedCover) {
             setCover(droppedCover);
+            setLibraryCover(null);
             setPreview(URL.createObjectURL(droppedCover));
         }
+    };
+
+    const handleSelectLibraryCover = (item) => {
+        setLibraryCover({ url: item.url, publicId: item.publicId });
+        setCover(null);
+        setPreview(item.url);
     };
 
     const handlePublish = async () => {
@@ -82,6 +134,10 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 formData.append('genre', metadata.genre);
                 formData.append('albumText', metadata.album || '');
                 if (cover) formData.append('cover', cover);
+                else if (libraryCover) {
+                    formData.append('coverUrl', libraryCover.url);
+                    formData.append('coverPublicId', libraryCover.publicId);
+                }
 
                 await api.patch(`/songs/${songToEdit.id}`, formData);
                 
@@ -95,6 +151,10 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
             if (mode === 'album') {
                 const albumFormData = new FormData();
                 if (cover) albumFormData.append('cover', cover);
+                else if (libraryCover) {
+                    albumFormData.append('coverUrl', libraryCover.url);
+                    albumFormData.append('coverPublicId', libraryCover.publicId);
+                }
                 albumFormData.append('title', metadata.album || metadata.title || 'Untitled Album');
                 albumFormData.append('artist', metadata.artist);
                 albumFormData.append('genre', metadata.genre);
@@ -126,6 +186,10 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 const formData = new FormData();
                 formData.append('audio', currentFile);
                 if (cover && mode !== 'album') formData.append('cover', cover);
+                else if (libraryCover && mode !== 'album') {
+                    formData.append('coverUrl', libraryCover.url);
+                    formData.append('coverPublicId', libraryCover.publicId);
+                }
                 formData.append('title', trackTitle);
                 formData.append('artist', metadata.artist);
                 formData.append('genre', metadata.genre);
@@ -197,7 +261,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 <div className="details">
                     <p>{mode === 'album' ? 'Album' : 'Track'} Artwork</p>
                     <span>Recommended: 1000x1000px JPG or PNG</span>
-                    {!cover && metadata.album && (
+                    {!cover && !libraryCover && metadata.album && (
                         <span style={{ 
                             color: '#f83821', 
                             display: 'block', 
@@ -212,6 +276,21 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                             ✨ Will inherit cover from "{metadata.album}"
                         </span>
                     )}
+                    {libraryCover && (
+                        <span style={{ 
+                            color: '#4CAF50', 
+                            display: 'block', 
+                            marginTop: '6px', 
+                            fontSize: '12px', 
+                            fontWeight: '600',
+                            background: 'rgba(76, 175, 80, 0.1)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            width: 'fit-content'
+                        }}>
+                            ✅ Using cover from Library
+                        </span>
+                    )}
                 </div>
                 <button onClick={() => coverInputRef.current?.click()}>Choose Cover</button>
                 <input 
@@ -222,6 +301,36 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                     onChange={handleCoverChange}
                 />
             </CoverUploadStyled>
+
+            {getUniqueCovers().length > 0 && (
+                <div style={{ marginBottom: '30px' }}>
+                    <p style={{ color: '#b3b3b3', fontSize: '13px', fontWeight: '600', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MdImage style={{ fontSize: '16px' }} /> Pick from Library (Reuse existing)
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
+                        {getUniqueCovers().map((item, idx) => (
+                            <div 
+                                key={idx} 
+                                onClick={() => handleSelectLibraryCover(item)}
+                                style={{ 
+                                    minWidth: '60px', 
+                                    height: '60px', 
+                                    borderRadius: '6px', 
+                                    overflow: 'hidden', 
+                                    cursor: 'pointer',
+                                    border: preview === item.url ? '2px solid #f83821' : '2px solid transparent',
+                                    opacity: preview === item.url ? 1 : 0.6,
+                                    transition: 'all 0.2s ease',
+                                    flexShrink: 0
+                                }}
+                                title={item.name}
+                            >
+                                <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <FormGridStyled>
                 <InputGroupStyled>
@@ -284,8 +393,9 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                             className="cancel" 
                             style={{ color: '#ff4d4d', border: '1px solid #333' }} 
                             onClick={() => {
-                                onDelete(songToEdit.id);
-                                onCancel();
+                                if (window.confirm("Are you sure you want to delete this track permanently?")) {
+                                    onDelete(songToEdit.id);
+                                }
                             }}
                             disabled={loading}
                         >
