@@ -285,8 +285,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
 
     const isOwner = (song) => {
         if (!user) return false;
-        if (user.role === 'admin') return true;
-        return song.uploadedBy === user.id || song.artist === user.username;
+        return user.role === 'admin';
     }
 
     const handleDeleteClick = async (e, songId) => {
