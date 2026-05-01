@@ -6,10 +6,10 @@ const router = express.Router();
 
 router.use(protect);
 
-router.post('/', albumController.albumUploadMiddleware, albumController.createAlbum);
+router.post('/', albumController.createAlbum);
 router.get('/', albumController.getMyAlbums);
 router.get('/:id', albumController.getAlbum);
-router.patch('/:id', albumController.albumUploadMiddleware, albumController.updateAlbum);
+router.patch('/:id', albumController.updateAlbum);
 router.delete('/:id', albumController.deleteAlbum);
 
 module.exports = router;

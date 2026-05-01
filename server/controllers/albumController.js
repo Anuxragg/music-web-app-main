@@ -1,34 +1,13 @@
 const { cloudinary } = require('../config/cloudinary');
 const Album = require('../models/Album');
-const multer = require('multer');
-
-const storage = multer.memoryStorage();
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for covers
-});
-
-exports.albumUploadMiddleware = upload.fields([{ name: 'cover', maxCount: 1 }]);
-
-const uploadBufferToCloudinary = (buffer, folder) => new Promise((resolve, reject) => {
-  const stream = cloudinary.uploader.upload_stream(
-    { folder, resource_type: 'image' },
-    (error, result) => {
-      if (error) return reject(error);
-      return resolve(result);
-    }
-  );
-  stream.end(buffer);
-});
 
 exports.createAlbum = async (req, res, next) => {
   try {
     let albumData = { ...req.body, owner: req.user._id };
 
-    if (req.files && req.files.cover) {
-      const result = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/album_covers');
-      albumData.coverUrl = result.secure_url;
-      albumData.coverPublicId = result.public_id;
+    if (req.body.coverUrl) {
+      albumData.coverUrl = req.body.coverUrl;
+      albumData.coverPublicId = req.body.coverPublicId;
     }
 
     const album = await Album.create(albumData);
@@ -61,10 +40,9 @@ exports.updateAlbum = async (req, res, next) => {
   try {
     let updateData = { ...req.body };
 
-    if (req.files && req.files.cover) {
-      const result = await uploadBufferToCloudinary(req.files.cover[0].buffer, 'vocalz/album_covers');
-      updateData.coverUrl = result.secure_url;
-      updateData.coverPublicId = result.public_id;
+    if (req.body.coverUrl) {
+      updateData.coverUrl = req.body.coverUrl;
+      updateData.coverPublicId = req.body.coverPublicId;
     }
 
     const album = await Album.findOneAndUpdate(

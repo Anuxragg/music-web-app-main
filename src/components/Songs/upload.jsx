@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import api from '../../services/api';
 import { 
     UploadContainerStyled, UploadHeaderStyled, ToggleGroupStyled, ToggleBtnStyled, 
@@ -109,10 +110,6 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
     };
 
     const handlePublish = async () => {
-        // If mode is 'single', we MUST have a track file
-        // If mode is 'album', and we HAVE a track file, we upload the track to that album
-        // If mode is 'album', and we DON'T HAVE a track file, we just create the Album shell
-        
         if (mode === 'single' && !songToEdit && files.length === 0) {
             notify('Please select an audio file first.', 'error');
             return;
@@ -125,21 +122,56 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
 
         if (setGlobalLoading) setGlobalLoading(songToEdit ? 'Updating track details...' : (files.length > 1 ? `Publishing ${files.length} tracks to Vocalz...` : 'Publishing your track to Vocalz...'));
         setLoading(true);
+
+        const uploadToCloudinaryDirect = async (file, resourceType, folder) => {
+            const sigRes = await api.get(`/songs/upload-signature?folder=${folder}`);
+            const { timestamp, signature, cloudName, apiKey } = sigRes.data;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', apiKey);
+            formData.append('timestamp', timestamp);
+            formData.append('signature', signature);
+            formData.append('folder', folder);
+
+            const uploadRes = await axios.post(
+                `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+                formData
+            );
+            
+            return {
+                url: uploadRes.data.secure_url,
+                publicId: uploadRes.data.public_id,
+                duration: uploadRes.data.duration
+            };
+        };
+
         try {
+            let finalCoverUrl = libraryCover ? libraryCover.url : '';
+            let finalCoverPublicId = libraryCover ? libraryCover.publicId : '';
+
+            // Upload cover if a new one was selected
+            if (cover) {
+                if (setGlobalLoading) setGlobalLoading('Uploading artwork...');
+                const coverData = await uploadToCloudinaryDirect(cover, 'image', 'vocalz/covers');
+                finalCoverUrl = coverData.url;
+                finalCoverPublicId = coverData.publicId;
+            }
+
             if (songToEdit) {
-                // Update existing song with FormData to support cover upload
-                const formData = new FormData();
-                formData.append('title', metadata.title);
-                formData.append('artist', metadata.artist);
-                formData.append('genre', metadata.genre);
-                formData.append('albumText', metadata.album || '');
-                if (cover) formData.append('cover', cover);
-                else if (libraryCover) {
-                    formData.append('coverUrl', libraryCover.url);
-                    formData.append('coverPublicId', libraryCover.publicId);
+                // Update existing song
+                const payload = {
+                    title: metadata.title,
+                    artist: metadata.artist,
+                    genre: metadata.genre,
+                    albumText: metadata.album || '',
+                };
+                if (finalCoverUrl) {
+                    payload.coverUrl = finalCoverUrl;
+                    payload.coverPublicId = finalCoverPublicId;
                 }
 
-                await api.patch(`/songs/${songToEdit.id}`, formData);
+                await api.patch(`/songs/${songToEdit.id}`, payload);
                 
                 notify('Song updated successfully!');
                 onCancel();
@@ -149,17 +181,17 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
 
             let createdAlbumId = null;
             if (mode === 'album') {
-                const albumFormData = new FormData();
-                if (cover) albumFormData.append('cover', cover);
-                else if (libraryCover) {
-                    albumFormData.append('coverUrl', libraryCover.url);
-                    albumFormData.append('coverPublicId', libraryCover.publicId);
+                const albumPayload = {
+                    title: metadata.album || metadata.title || 'Untitled Album',
+                    artist: metadata.artist,
+                    genre: metadata.genre,
+                };
+                if (finalCoverUrl) {
+                    albumPayload.coverUrl = finalCoverUrl;
+                    albumPayload.coverPublicId = finalCoverPublicId;
                 }
-                albumFormData.append('title', metadata.album || metadata.title || 'Untitled Album');
-                albumFormData.append('artist', metadata.artist);
-                albumFormData.append('genre', metadata.genre);
                 
-                const res = await api.post('/albums', albumFormData);
+                const res = await api.post('/albums', albumPayload);
 
                 if (res.data?.success) {
                     createdAlbumId = res.data.data._id;
@@ -172,7 +204,6 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                 }
             }
 
-            // Case 2: Upload a track (and optionally link/create album)
             if (files.length === 0) {
                 notify('Please select an audio file to upload.', 'error');
                 return;
@@ -180,28 +211,35 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
 
             for (let i = 0; i < files.length; i++) {
                 const currentFile = files[i];
+                if (setGlobalLoading) setGlobalLoading(`Uploading audio ${i + 1} of ${files.length}...`);
+                const audioData = await uploadToCloudinaryDirect(currentFile, 'video', 'vocalz/audio');
+
                 const cleanName = currentFile.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
                 const trackTitle = files.length === 1 ? metadata.title : cleanName;
 
-                const formData = new FormData();
-                formData.append('audio', currentFile);
-                if (cover && mode !== 'album') formData.append('cover', cover);
-                else if (libraryCover && mode !== 'album') {
-                    formData.append('coverUrl', libraryCover.url);
-                    formData.append('coverPublicId', libraryCover.publicId);
-                }
-                formData.append('title', trackTitle);
-                formData.append('artist', metadata.artist);
-                formData.append('genre', metadata.genre);
-                formData.append('albumText', metadata.album || '');
-                if (createdAlbumId) formData.append('album', createdAlbumId);
-                formData.append('isPublic', 'true');
+                const payload = {
+                    title: trackTitle,
+                    artist: metadata.artist,
+                    genre: metadata.genre,
+                    albumText: metadata.album || '',
+                    audioUrl: audioData.url,
+                    audioPublicId: audioData.publicId,
+                    duration: audioData.duration,
+                    isPublic: 'true'
+                };
 
-                await api.post('/songs', formData);
+                if (finalCoverUrl && mode !== 'album') {
+                    payload.coverUrl = finalCoverUrl;
+                    payload.coverPublicId = finalCoverPublicId;
+                }
+                if (createdAlbumId) payload.album = createdAlbumId;
+
+                if (setGlobalLoading) setGlobalLoading(`Saving track ${i + 1}...`);
+                await api.post('/songs', payload);
             }
 
             notify(`Success! ${files.length} track(s) uploaded successfully.`);
-            onCancel(); // Close the upload view
+            onCancel(); 
             window.location.reload(); 
 
         } catch (err) {

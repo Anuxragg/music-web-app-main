@@ -1,3 +1,8 @@
 node_modules/
 .env
 dist/
+index-cd4-zLI_.js:2146 Upload error: AxiosError: Request failed with status code 413
+    at W0 (index-cd4-zLI_.js:719:1105)
+    at XMLHttpRequest.h (index-cd4-zLI_.js:719:5945)
+    at Ml.request (index-cd4-zLI_.js:721:2090)
+    at async X (index-cd4-zLI_.js:2146:3344)
