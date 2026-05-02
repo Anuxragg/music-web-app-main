@@ -127,6 +127,10 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
             const sigRes = await api.get(`/songs/upload-signature?folder=${folder}`);
             const { timestamp, signature, cloudName, apiKey } = sigRes.data;
 
+            if (!cloudName || !apiKey) {
+                throw new Error('Cloudinary credentials missing. Please RESTART your backend server so it can load the new .env variables.');
+            }
+
             const formData = new FormData();
             formData.append('file', file);
             formData.append('api_key', apiKey);
@@ -212,7 +216,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
             for (let i = 0; i < files.length; i++) {
                 const currentFile = files[i];
                 if (setGlobalLoading) setGlobalLoading(`Uploading audio ${i + 1} of ${files.length}...`);
-                const audioData = await uploadToCloudinaryDirect(currentFile, 'video', 'vocalz/audio');
+                const audioData = await uploadToCloudinaryDirect(currentFile, 'auto', 'vocalz/audio');
 
                 const cleanName = currentFile.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
                 const trackTitle = files.length === 1 ? metadata.title : cleanName;
@@ -243,8 +247,9 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
             window.location.reload(); 
 
         } catch (err) {
-            console.error('Upload error:', err);
-            notify(err.response?.data?.message || 'Failed to process request.', 'error');
+            console.error('Upload error details:', err.response?.data || err);
+            const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to process request. Check console for details.';
+            notify(errorMessage, 'error');
         } finally {
             setLoading(false);
             if (setGlobalLoading) setGlobalLoading(null);
@@ -275,7 +280,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                         type="file" 
                         ref={fileInputRef} 
                         style={{display: 'none'}} 
-                        accept="audio/*" 
+                        accept=".mp3,.wav,.flac,.ogg,.m4a,audio/mp3,audio/wav,audio/flac,audio/ogg,audio/m4a,audio/mpeg" 
                         onChange={handleFileDrop}
                         multiple={mode === 'album'}
                     />

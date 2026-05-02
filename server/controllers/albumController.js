@@ -10,7 +10,23 @@ exports.createAlbum = async (req, res, next) => {
       albumData.coverPublicId = req.body.coverPublicId;
     }
 
-    const album = await Album.create(albumData);
+    // Check if album with same title already exists for this owner
+    let album = await Album.findOne({
+        title: new RegExp(`^${req.body.title}$`, 'i'),
+        owner: req.user._id
+    });
+
+    if (album) {
+        // Update cover if new one provided
+        if (req.body.coverUrl && !album.coverUrl) {
+            album.coverUrl = req.body.coverUrl;
+            album.coverPublicId = req.body.coverPublicId;
+            await album.save();
+        }
+        return res.status(200).json({ success: true, data: album, message: 'Existing album used' });
+    }
+
+    album = await Album.create(albumData);
     res.status(201).json({ success: true, data: album });
   } catch (error) {
     next(error);
