@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import defaultArtistImg from '../../media/voj.jpg';
 import AudioPlayer from '../Audio-Player/audioPlayer';
 import api from '../../services/api';
@@ -10,13 +10,14 @@ import {
     AlbumViewContainerStyled, AlbumLeftColStyled, AlbumRightColStyled, AlbumHeaderInfoStyled,
     AlbumActionsRowStyled, AlbumTracklistHeaderStyled, AlbumTrackRowStyled, AlbumGenreGridStyled, AlbumFeaturedArtistsStyled,
     ArtistProfileContainerStyled, ArtistBannerStyled, ArtistStatsStyled, ArtistActionsStyled, ArtistProfileTabsStyled, ArtistSectionStyled,
-    EditPlaylistModalOverlayStyled, EditPlaylistModalStyled, SkeletonBox, SongMenuStyled
+    EditPlaylistModalOverlayStyled, EditPlaylistModalStyled, SkeletonBox, SongMenuStyled,
+    SliderNavBtnStyled
 } from './songsList.styled';
 import { 
     MdPlaylistAdd, MdFavorite, MdFavoriteBorder, MdMoreHoriz, MdSearch, MdClose, 
-    MdCloudUpload, MdArrowBack, MdExpandMore, MdExpandLess, MdDelete, MdEdit, MdMusicNote, MdRecordVoiceOver, MdPlayArrow, MdOutlineFileDownload, MdShuffle, MdLoop, MdVolumeUp, MdVolumeMute, MdPlaylistPlay, MdDevices, MdQueueMusic, MdOpenInFull, MdModeEdit, MdImage, MdOutlineFileUpload, MdAdd, MdAlbum, MdAddCircleOutline 
+    MdCloudUpload, MdArrowBack, MdExpandMore, MdExpandLess, MdDelete, MdEdit, MdMusicNote, MdRecordVoiceOver, MdPlayArrow, MdOutlineFileDownload, MdShuffle, MdLoop, MdVolumeUp, MdVolumeMute, MdPlaylistPlay, MdDevices, MdQueueMusic, MdOpenInFull, MdModeEdit, MdImage, MdOutlineFileUpload, MdAdd, MdAlbum, MdAddCircleOutline, MdChevronRight 
 } from 'react-icons/md';
-import { IoPlay, IoPause, IoShuffleOutline, IoRepeatOutline, IoArrowBack } from "react-icons/io5";
+import { IoPlay, IoPause, IoShuffleOutline, IoRepeatOutline, IoArrowBack, IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
 import { FiShare } from "react-icons/fi";
 import { GiLovers, GiBoombox, GiViolin, GiCarKey } from 'react-icons/gi';
 import UploadSongs from './upload';
@@ -70,6 +71,14 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     const [toast, setToast] = useState(null); // { message, type }
     const [showAllArtistSongs, setShowAllArtistSongs] = useState(false);
     const [menuSongId, setMenuSongId] = useState(null);
+    const topSongsRef = useRef(null);
+
+    const handleScroll = (direction) => {
+        if (topSongsRef.current) {
+            const scrollAmount = topSongsRef.current.offsetWidth * 0.8;
+            topSongsRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+        }
+    };
 
     // Close menu on click outside
     useEffect(() => {
@@ -115,7 +124,18 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                     audioUrl: song.audioUrl
                 }));
                 setLiveSongs(normalized);
-                setShuffledHomeSongs([...normalized].sort(() => Math.random() - 0.5).slice(0, 50));
+                
+                // Fisher-Yates shuffle for better randomness
+                const shuffleArray = (array) => {
+                    const shuffled = [...array];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    return shuffled;
+                };
+                
+                setShuffledHomeSongs(shuffleArray(normalized).slice(0, 50));
             }
         } catch (err) {
             console.error("Error fetching live library", err);
@@ -448,8 +468,35 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         } finally { setSaveLoading(false); }
     };
 
-    let displayedSongs = currentView === 'Home' ? (shuffledHomeSongs.length > 0 ? shuffledHomeSongs : liveSongs.slice(0, 50)) : liveSongs;
+    let displayedSongs = [];
     let heading = currentView;
+
+    // View Logic
+    if (currentView === 'Home') {
+        displayedSongs = shuffledHomeSongs.length > 0 ? shuffledHomeSongs : liveSongs.slice(0, 50);
+    } 
+    else if (currentView === 'Search') {
+        if (searchResults && searchResults.songs && searchResults.songs.length > 0) {
+            displayedSongs = searchResults.songs.map(song => ({
+                id: song._id,
+                songName: song.title,
+                artist: song.artist,
+                albumText: song.albumText || '',
+                genre: song.genre || 'Other',
+                duration: song.durationFormatted || formatTime(song.duration),
+                songImage: song.coverUrl || '/m-app-logo.png',
+                audioUrl: song.audioUrl
+            }));
+            heading = `Results (${displayedSongs.length})`;
+        } else {
+            displayedSongs = [];
+            heading = 'Search';
+        }
+    }
+    else {
+        displayedSongs = liveSongs;
+    }
+
     let isArtistView = false;
     let artistsList = [];
 
@@ -464,20 +511,6 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
             return liveSongs.find(s => String(s.id) === String(songId));
         }).filter(Boolean);
         heading = selectedPlaylist.name;
-    } 
-    // Menu View Logic
-    else if (searchResults && searchResults.songs && searchResults.songs.length > 0) {
-        displayedSongs = searchResults.songs.map(song => ({
-            id: song._id,
-            songName: song.title,
-            artist: song.artist,
-            albumText: song.albumText || '',
-            genre: song.genre || 'Other',
-            duration: song.durationFormatted || formatTime(song.duration),
-            songImage: song.coverUrl || 'https://via.placeholder.com/100',
-            audioUrl: song.audioUrl
-        }));
-        heading = `Search Results (${displayedSongs.length})`;
     } else if (currentView === 'Listen History') {
         displayedSongs = recentHistory.map(id => liveSongs.find(song => String(song.id) === String(id))).filter(Boolean);
         heading = 'Listen History';
@@ -587,28 +620,31 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 {isHomeView ? (
                     <>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px' }}>
-                            <ViewHeadingStyled style={{ fontSize: '24px', margin: 0 }}>Top Songs</ViewHeadingStyled>
-                            <button onClick={() => setIsCreatingPlaylist(true)} style={{ background: '#f83821', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} onClick={() => setCurrentView('Discover')}>
+                                <ViewHeadingStyled style={{ fontSize: '20px', margin: 0 }}>Best New Songs</ViewHeadingStyled>
+                                <MdChevronRight style={{ fontSize: '28px', color: '#b3b3b3', marginTop: '2px' }} />
+                            </div>
+                            <button onClick={() => setIsCreatingPlaylist(true)} style={{ background: '#f83821', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <MdAddCircleOutline fontSize="18px" /> New Playlist
                             </button>
                         </div>
-                        <TopSongsGridStyled>
-                            {loading ? (
-                                Array(10).fill(0).map((_, i) => (
-                                    <SkeletonBox key={i} $width="100%" $height="60px" $borderRadius="8px" style={{ marginBottom: '10px' }} />
-                                ))
-                            ) : liveSongs.length > 0 ? (
-                                liveSongs.slice(0, 10).map((song, index) => (
-                                    <SongContainerStyled key={song.id} onClick={() => handleSongClick(song, liveSongs.slice(0, 10))}>
+                        <div style={{ position: 'relative' }}>
+                            <TopSongsGridStyled ref={topSongsRef}>
+                                {loading ? (
+                                    Array(10).fill(0).map((_, i) => (
+                                        <SkeletonBox key={i} $width="100%" $height="60px" $borderRadius="8px" style={{ marginBottom: '10px' }} />
+                                    ))
+                                ) : shuffledHomeSongs.length > 0 ? (
+                                    shuffledHomeSongs.slice(0, 32).map((song, index) => (
+                                    <SongContainerStyled key={song.id} onClick={() => handleSongClick(song, shuffledHomeSongs.slice(0, 32))}>
                                         <SongDetailsContainerStyled>
-                                            <SongIndexStyled>{clickedSong?.id === song.id ? <IoPlay style={{ color: '#f83821' }} /> : index + 1}</SongIndexStyled>
                                             <SongImgContainerStyled><img src={song.songImage} alt="" /></SongImgContainerStyled>
-                                            <SongNameArtistStyled><p>{song.songName}</p><p>{song.artist}</p></SongNameArtistStyled>
+                                            <SongNameArtistStyled>
+                                                <p style={{ fontWeight: '600', fontSize: '15px' }}>{song.songName}</p>
+                                                <p style={{ opacity: 0.6, fontSize: '13px' }}>{song.artist}</p>
+                                            </SongNameArtistStyled>
                                         </SongDetailsContainerStyled>
                                         <SongDurationContainerStyled>
-                                            <p>{song.duration}</p>
-                                            <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
-                                            <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
                                             {isOwner(song) && (
                                                 <div style={{ position: 'relative' }}>
                                                     <button 
@@ -630,7 +666,10 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     <p style={{ fontSize: '14px', marginTop: '8px' }}>Start by uploading your first track!</p>
                                 </div>
                             )}
-                        </TopSongsGridStyled>
+                            </TopSongsGridStyled>
+                            <SliderNavBtnStyled className="prev" onClick={() => handleScroll('left')}><IoChevronBackOutline /></SliderNavBtnStyled>
+                            <SliderNavBtnStyled className="next" onClick={() => handleScroll('right')}><IoChevronForwardOutline /></SliderNavBtnStyled>
+                        </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px', marginTop: '30px' }}>
                             <ViewHeadingStyled style={{ fontSize: '24px', margin: 0 }}>Recently Added Albums</ViewHeadingStyled>
@@ -843,7 +882,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
 
                             <ArtistSectionStyled style={{ marginTop: '0' }}>
                                 <h2>Top songs</h2>
-                                <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '10px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
                                     {displayedArtistSongs.map((song, index) => (
                                         <SongContainerStyled 
                                             key={song.id} 
@@ -970,30 +1009,40 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                         ))}
                     </div>
                 ) : (
-                    displayedSongs.map(song => (
-                        <SongContainerStyled key={song.id} onClick={() => handleSongClick(song, displayedSongs)}>
-                            <SongDetailsContainerStyled>
-                                <SongImgContainerStyled><img src={song.songImage} alt="" /></SongImgContainerStyled>
-                                <SongNameArtistStyled><p>{song.songName}</p><p>{song.artist}</p></SongNameArtistStyled>
-                            </SongDetailsContainerStyled>
-                            <SongDurationContainerStyled>
-                                <p>{song.duration}</p>
-                                <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
-                                <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
-                                {isOwner(song) && (
-                                    <div style={{ position: 'relative' }}>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
-                                            style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
-                                        >
-                                            <MdMoreHoriz fontSize="20px" />
-                                        </button>
-                                        {renderSongMenu(song)}
-                                    </div>
-                                )}
-                            </SongDurationContainerStyled>
-                        </SongContainerStyled>
-                    ))
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {currentView === 'Search' && displayedSongs.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '100px 20px', opacity: 0.5 }}>
+                                <MdSearch size={64} style={{ marginBottom: '15px' }} />
+                                <p style={{ fontSize: '18px', fontWeight: '500', margin: 0 }}>Search Vocalz</p>
+                                <p style={{ fontSize: '14px', marginTop: '8px' }}>Find your favorite songs, artists, and albums.</p>
+                            </div>
+                        ) : (
+                            displayedSongs.map(song => (
+                                <SongContainerStyled key={song.id} onClick={() => handleSongClick(song, displayedSongs)}>
+                                    <SongDetailsContainerStyled>
+                                        <SongImgContainerStyled><img src={song.songImage} alt="" /></SongImgContainerStyled>
+                                        <SongNameArtistStyled><p>{song.songName}</p><p>{song.artist}</p></SongNameArtistStyled>
+                                    </SongDetailsContainerStyled>
+                                    <SongDurationContainerStyled>
+                                        <p>{song.duration}</p>
+                                        <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
+                                        <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
+                                        {isOwner(song) && (
+                                            <div style={{ position: 'relative' }}>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                    style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                                >
+                                                    <MdMoreHoriz fontSize="20px" />
+                                                </button>
+                                                {renderSongMenu(song)}
+                                            </div>
+                                        )}
+                                    </SongDurationContainerStyled>
+                                </SongContainerStyled>
+                            ))
+                        )}
+                    </div>
                 )}
 
                 {/* Modals */}

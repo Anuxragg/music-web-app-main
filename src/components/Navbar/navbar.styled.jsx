@@ -7,7 +7,7 @@ export const NavContainerStyled = styled.div`
   width: ${props => props.$collapsed ? '84px' : '280px'}; /* Slightly wider for library items */
   background-color: #000000; /* Solid black sidebar per Spotify style */
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 2000;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -50,6 +50,7 @@ export const NavHeadStyled = styled.div`
       height: 60px;
       padding: 0 15px;
       align-items: center;
+      width: 100%;
     }
 `
 
@@ -203,7 +204,7 @@ export const NavPillStyled = styled.button`
   border-radius: 30px; /* more rounded pill */
   padding: 12px 24px; /* increased padding for premium feel */
   color: ${props => props.$isActive ? 'white' : props.children[1].props.children === 'Upload' ? '#f83821' : '#b3b3b3'};
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
@@ -252,7 +253,7 @@ export const SearchInputPillStyled = styled.div`
     background: transparent;
     border: none;
     color: white;
-    font-size: 15px;
+    font-size: 14px;
     font-family: 'Plus Jakarta Sans', sans-serif;
     outline: none;
     width: 200px;
@@ -283,7 +284,7 @@ export const SearchInputPillStyled = styled.div`
 `;
 export const SideNavHeaderStyled = styled.p`
   color: #b3b3b3;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: capitalize; /* Spotify uses 'My Library' with caps */
   padding: 24px 24px 8px 24px;

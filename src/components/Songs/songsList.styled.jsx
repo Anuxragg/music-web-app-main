@@ -30,7 +30,7 @@ export const SongsListWrapperStyled = styled.div`
 export const ViewHeadingStyled = styled.h1`
   font-family: 'Inter', sans-serif;
   color: white;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   margin: 0 0 20px 0;
   letter-spacing: -0.5px;
@@ -40,72 +40,54 @@ export const ViewHeadingStyled = styled.h1`
   }
 
   @media (max-width: 480px) {
-    font-size: 24px;
-    margin: 0 0 15px 0;
+    font-size: 20px;
+    margin: 0 0 12px 0;
   }
 `
 
 export const SongContainerStyled = styled.div`
   width: 100%;
   height: 60px;
-  margin-top: 0;
-  padding: 0 20px 0 20px;
+  padding: 0 20px;
   background-color: transparent;
   color: white;
-  border-radius: 0;
+  border-radius: 8px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
+  scroll-snap-align: start;
 
-  &:hover{
+  &:hover {
     background-color: rgba(255,255,255,0.05);
   }
 
   @media (max-width: 768px) {
-    width: 100%;
-    max-width: 400px;
-    height: 55px;
-    margin-top: 15px;
+    height: 56px;
+    padding: 0 4px 0 0;
+    border-bottom: none;
+    
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
   @media (max-width: 480px) {
-    width: 100%;
-    height: 50px;
-    margin-top: 12px;
-    padding: 0 15px;
+    height: 60px;
   }
 `
 
 export const SongDetailsContainerStyled = styled.div`
-  align-items: center;
-  display: flex;
-`
-
-export const SongDurationContainerStyled = styled.div`
   display: flex;
   align-items: center;
-  gap: 15px;
-  justify-content: flex-end;
-  min-width: 100px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+`;
 
-  > p{
-    font-size: 13px;
-    font-weight: 300;
-    margin: 0;
-  }
-
-  @media (max-width: 480px) {
-    gap: 10px;
-
-    > p {
-      font-size: 11px;
-    }
-  }
-`
 
 export const SongImgContainerStyled = styled.div`
   width: 40px;
@@ -118,38 +100,76 @@ export const SongImgContainerStyled = styled.div`
 }
 
   @media (max-width: 480px) {
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
+    
+    > img {
+      border-radius: 4px;
+    }
   }
 `
 
 export const SongNameArtistStyled = styled.div`
+  display: flex;
+  flex-direction: column;
   margin-left: 15px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 
-  > p:nth-child(1){
+  p {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  p:first-child {
     font-size: 14px;
     font-weight: 600;
-    margin: 0;
+    color: white;
+    margin-bottom: 2px;
   }
-  > p:nth-child(2){
+
+  p:last-child {
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
+    color: #b3b3b3;
+  }
+
+  @media (max-width: 768px) {
+    margin-left: 10px;
+    
+    p:first-child { font-size: 14px; }
+    p:last-child { font-size: 12px; }
+  }
+`;
+
+export const SongDurationContainerStyled = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: 10px;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  min-width: 80px;
+
+  p {
+    font-size: 14px;
     color: #b3b2b2;
     margin: 0;
-}
+  }
 
   @media (max-width: 480px) {
-    margin-left: 10px;
-
-    > p:nth-child(1) {
+    gap: 8px;
+    min-width: 60px;
+    
+    p {
       font-size: 12px;
     }
-
-    > p:nth-child(2) {
-      font-size: 11px;
-    }
   }
-`
+`;
 
 export const LikeButtonStyled = styled.button`
   background: none;
@@ -223,7 +243,7 @@ export const GenreCardStyled = styled.div`
 
   p {
     color: white;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     margin: 0;
     padding-left: 2px;
@@ -234,13 +254,66 @@ export const GenreCardStyled = styled.div`
 
 export const TopSongsGridStyled = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(4, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 60px) / 3);
   column-gap: 30px;
   row-gap: 0;
   margin-bottom: 40px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  
+  /* Hide scrollbar */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  @media (max-width: 1200px) {
+    grid-auto-columns: calc((100% - 30px) / 2);
+  }
+
+  @media (max-width: 768px) {
+    grid-auto-columns: 85%;
+    gap: 0 12px;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+`;
+
+export const SliderNavBtnStyled = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(18, 18, 18, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+
+  &:hover {
+    background: #f83821;
+    border-color: #f83821;
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  &.prev { left: -20px; }
+  &.next { right: -20px; }
 
   @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
+    display: none; /* Hide on tablets/mobile where touch is preferred */
   }
 `;
 
@@ -253,6 +326,10 @@ export const SongIndexStyled = styled.div`
   align-items: center;
   justify-content: flex-end;
   margin-right: 15px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 export const AlbumsScrollContainerStyled = styled.div`
@@ -331,7 +408,7 @@ export const AlbumCardStyled = styled.div`
 
   .album-title {
     color: white;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     margin: 0;
     white-space: nowrap;
@@ -347,7 +424,7 @@ export const AlbumCardStyled = styled.div`
     gap: 6px;
     margin-top: 8px;
     color: #b3b3b3;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
   }
 

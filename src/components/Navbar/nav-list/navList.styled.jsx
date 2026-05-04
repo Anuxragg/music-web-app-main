@@ -10,6 +10,7 @@ export const NavListContainerStyled = styled.div`
       display: ${props => props.$menuOpen ? 'flex' : 'none'};
       margin: 20px 0;
       width: 100%;
+      padding: 0 15px;
     }
 `
 
@@ -40,6 +41,10 @@ export const NavListStyled = styled.div`
   > p {
     display: ${props => props.$collapsed ? 'none' : 'block'};
     margin-left: 16px;
+    
+    @media (max-width: 480px) {
+      display: block;
+    }
   }
 
   > span.react-icon {
