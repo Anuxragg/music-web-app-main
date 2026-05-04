@@ -205,18 +205,25 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         
         return (
             <SongMenuStyled onClick={(e) => e.stopPropagation()}>
-                <button onClick={(e) => { e.stopPropagation(); setEditingSong(song); setMenuSongId(null); }}>
-                    <MdEdit /> Edit Song
+                <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); setMenuSongId(null); }}>
+                    <MdPlaylistAdd /> Add to collection
                 </button>
-                <button className="delete" onClick={(e) => { 
-                    e.stopPropagation(); 
-                    if (window.confirm("Are you sure you want to delete this track permanently?")) {
-                        handleDeleteSong(song.id);
-                    }
-                    setMenuSongId(null);
-                }}>
-                    <MdDelete /> Delete Track
-                </button>
+                {isOwner(song) && (
+                    <>
+                        <button onClick={(e) => { e.stopPropagation(); setEditingSong(song); setMenuSongId(null); }}>
+                            <MdEdit /> Edit Song
+                        </button>
+                        <button className="delete" onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (window.confirm("Are you sure you want to delete this track permanently?")) {
+                                handleDeleteSong(song.id);
+                            }
+                            setMenuSongId(null);
+                        }}>
+                            <MdDelete /> Delete Track
+                        </button>
+                    </>
+                )}
             </SongMenuStyled>
         );
     };
@@ -645,17 +652,16 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                             </SongNameArtistStyled>
                                         </SongDetailsContainerStyled>
                                         <SongDurationContainerStyled>
-                                            {isOwner(song) && (
-                                                <div style={{ position: 'relative' }}>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
-                                                        style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
-                                                    >
-                                                        <MdMoreHoriz fontSize="20px" />
-                                                    </button>
-                                                    {renderSongMenu(song)}
-                                                </div>
-                                            )}
+                                            <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
+                                            <div style={{ position: 'relative' }}>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                    style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                                >
+                                                    <MdMoreHoriz fontSize="20px" />
+                                                </button>
+                                                {renderSongMenu(song)}
+                                            </div>
                                         </SongDurationContainerStyled>
                                     </SongContainerStyled>
                                 ))
@@ -788,7 +794,7 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                             {((currentView === 'Playlist' && (selectedPlaylist?.owner === user?.id || selectedPlaylist?.owner?._id === user?.id)) || (currentView === 'Album' && user?.role === 'admin')) && (
                                                 <button onClick={(e) => handleRemoveFromPlaylist(e, song.id)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer' }} title="Remove from collection"><MdDelete /></button>
                                             )}
-                                            {user?.role === 'admin' && (
+                                                <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
                                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
@@ -798,7 +804,6 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                                     </button>
                                                     {renderSongMenu(song)}
                                                 </div>
-                                            )}
                                         </div>
                                     </AlbumTrackRowStyled>
                                 ))}
@@ -895,19 +900,16 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                             </SongDetailsContainerStyled>
                                             <SongDurationContainerStyled>
                                                 <p>{song.duration}</p>
-                                                <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
                                                 <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
-                                                {isOwner(song) && (
-                                                    <div style={{ position: 'relative' }}>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
-                                                            style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
-                                                        >
-                                                            <MdMoreHoriz fontSize="20px" />
-                                                        </button>
-                                                        {renderSongMenu(song)}
-                                                    </div>
-                                                )}
+                                                <div style={{ position: 'relative' }}>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                        style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                                    >
+                                                        <MdMoreHoriz fontSize="20px" />
+                                                    </button>
+                                                    {renderSongMenu(song)}
+                                                </div>
                                             </SongDurationContainerStyled>
                                         </SongContainerStyled>
                                     ))}
@@ -1025,19 +1027,16 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     </SongDetailsContainerStyled>
                                     <SongDurationContainerStyled>
                                         <p>{song.duration}</p>
-                                        <button onClick={(e) => { e.stopPropagation(); setAddingSongToPlaylist(song); }} style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}><MdPlaylistAdd /></button>
                                         <LikeButtonStyled onClick={(e) => handleLikeClick(e, song.id)} $isFavorite={isFavorite(song.id)}>{isFavorite(song.id) ? <MdFavorite /> : <MdFavoriteBorder />}</LikeButtonStyled>
-                                        {isOwner(song) && (
-                                            <div style={{ position: 'relative' }}>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
-                                                    style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
-                                                >
-                                                    <MdMoreHoriz fontSize="20px" />
-                                                </button>
-                                                {renderSongMenu(song)}
-                                            </div>
-                                        )}
+                                        <div style={{ position: 'relative' }}>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setMenuSongId(menuSongId === song.id ? null : song.id); }} 
+                                                style={{ background: 'none', border: 'none', color: '#b3b3b3', cursor: 'pointer' }}
+                                            >
+                                                <MdMoreHoriz fontSize="20px" />
+                                            </button>
+                                            {renderSongMenu(song)}
+                                        </div>
                                     </SongDurationContainerStyled>
                                 </SongContainerStyled>
                             ))
