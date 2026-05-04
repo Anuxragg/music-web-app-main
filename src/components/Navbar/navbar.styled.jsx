@@ -20,7 +20,7 @@ export const NavContainerStyled = styled.div`
 
   @media (max-width: 480px) {
     width: 100%;
-    height: ${props => props.$menuOpen ? '100vh' : '70px'};
+    height: ${props => props.$menuOpen ? '100vh' : '60px'};
     position: fixed;
     top: 0;
     left: 0;
@@ -111,8 +111,9 @@ export const AppLogoContainerStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    height: 40px;
-    width: 40px;
+    height: 45px;
+    width: 45px;
+    margin-bottom: 0;
   }
 `
 
