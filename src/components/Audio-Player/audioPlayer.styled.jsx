@@ -180,9 +180,8 @@ export const ExpandedPlayerContainerStyled = styled.div`
 
   @media (max-width: 480px) {
     padding: 32px 24px;
-    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
-    justify-content: flex-start; /* Switch to flex-start and use gaps for better control */
-    gap: 20px;
+    padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)); /* Increased bottom padding */
+    justify-content: space-between; /* Balance items vertically */
   }
 
   @media (min-width: 1025px) {
@@ -425,6 +424,14 @@ export const ExpandedFooterStyled = styled.div`
     padding: 10px;
     transition: all 0.2s ease;
     &:hover { opacity: 1; color: white; }
+  }
+
+  @media (max-width: 480px) {
+    margin-top: 10px;
+    opacity: 0.8;
+    span {
+      padding: 5px; /* Smaller touch area to save space */
+    }
   }
 
   @media (min-width: 1025px) {
