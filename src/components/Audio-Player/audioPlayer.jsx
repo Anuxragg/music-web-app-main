@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled, ActiveSongLikeButtonStyled, ActionGroupStyled, PlaybackControlsGroupStyled, CenterGroupStyled, IdentityGroupStyled, MobileProgressBarContainerStyled, MobileTimerStyled } from "./audioPlayer.styled";
+import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled, ActiveSongLikeButtonStyled, ActionGroupStyled, PlaybackControlsGroupStyled, CenterGroupStyled, IdentityGroupStyled, MobileProgressBarContainerStyled, MobileTimerStyled, AmbientAuraStyled, ExpandedPlayerContainerStyled, ExpandedHeaderStyled, ExpandedAlbumArtStyled, ExpandedDetailsStyled, ExpandedProgressStyled, ExpandedControlsStyled, ExpandedFooterStyled, ExpandedContentWrapperStyled, ExpandedRightSectionStyled } from "./audioPlayer.styled";
 import { AudioPlayerDefaultStyled } from "./audioPlayerDefault.styled";
 import { AudioControlsContainerStyled, MainPlayButtonStyled, ControlIconStyled, VolumeControlContainerStyled, VolumeControlBarStyled, VolumeChangeStyled, SongSliderContainerStyled, ProgressBarContainerStyled, ProgressBarStyled } from "./audioControls.styled";
-import { IoPlay, IoPause, IoShuffleOutline, IoShuffle, IoRepeatOutline, IoRepeat } from "react-icons/io5";
+import { IoPlay, IoPause, IoShuffleOutline, IoShuffle, IoRepeatOutline, IoRepeat, IoChevronDown, IoShareOutline } from "react-icons/io5";
 import { BiSkipNext, BiSkipPrevious } from "react-icons/bi";
-import { MdVolumeUp, MdVolumeMute, MdFavorite, MdFavoriteBorder, MdAddCircleOutline, MdPlaylistAdd, MdDevices, MdQueueMusic, MdMoreHoriz, MdOpenInFull } from "react-icons/md";
+import { MdFavorite, MdFavoriteBorder, MdFormatListBulleted, MdVolumeUp, MdVolumeMute, MdAddCircleOutline, MdOpenInFull } from "react-icons/md";
 
 export default function AudioPlayer({
     pickedSong,
@@ -29,6 +29,7 @@ export default function AudioPlayer({
     const [duration, setDuration] = useState(0)
     const [currentTime, setCurrentTime] = useState(0)
     const [isMuted, setIsMuted] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [previousVolume, setPreviousVolume] = useState(0.5);
     const [isDraggingVolume, setIsDraggingVolume] = useState(false);
     const [isDraggingProgress, setIsDraggingProgress] = useState(false);
@@ -69,12 +70,10 @@ export default function AudioPlayer({
             if (volumeControlBarRef.current && volumeControlBarRef.current.contains(e.target)) {
                 e.preventDefault();
                 const currentVolume = audioRef.current.volume;
-                // Determine linear width value backward from perceived quadratic curve
                 const currentVisualVolume = Math.sqrt(currentVolume);
                 const scrollDirection = e.deltaY > 0 ? -0.1 : 0.1;
                 const newVisualVolume = Math.max(0, Math.min(1, currentVisualVolume + scrollDirection));
 
-                // Square the visual volume to simulate logarithmic perception
                 audioRef.current.volume = newVisualVolume * newVisualVolume;
                 volumeChangeRef.current.style.width = `${newVisualVolume * 100}%`;
 
@@ -133,7 +132,6 @@ export default function AudioPlayer({
         const volumeChangeInPercentage = Math.max(0, Math.min(100, (volumeClickPosition / rect.width) * 100));
         const visualVolume = 0.01 * volumeChangeInPercentage;
 
-        // Square the visual volume to simulate logarithmic audio perception
         const actualVolume = visualVolume * visualVolume;
 
         audioRef.current.volume = actualVolume;
@@ -148,11 +146,9 @@ export default function AudioPlayer({
     const handleVolumeScroll = (e) => {
         if (!audioRef.current) return;
 
-        // deltaY is positive when scrolling down, negative when scrolling up
         const volumeStep = 0.05;
         const change = e.deltaY > 0 ? -volumeStep : volumeStep;
 
-        // Get current visual volume (linear 0-1)
         const currentVisualVolume = Math.sqrt(audioRef.current.volume);
         const newVisualVolume = Math.max(0, Math.min(1, currentVisualVolume + change));
         const actualVolume = newVisualVolume * newVisualVolume;
@@ -165,6 +161,20 @@ export default function AudioPlayer({
 
         if (actualVolume > 0 && isMuted) {
             setIsMuted(false);
+        }
+    }
+
+    const handleMuteToggle = () => {
+        if (isMuted) {
+            audioRef.current.volume = previousVolume;
+            const visualVolume = Math.sqrt(previousVolume);
+            volumeChangeRef.current.style.width = `${visualVolume * 100}%`;
+            setIsMuted(false);
+        } else {
+            setPreviousVolume(audioRef.current.volume);
+            audioRef.current.volume = 0;
+            volumeChangeRef.current.style.width = '0%';
+            setIsMuted(true);
         }
     }
 
@@ -181,7 +191,6 @@ export default function AudioPlayer({
         handleTimeUpdate();
     }
 
-    // Global drag handlers
     useEffect(() => {
         const handleMove = (e) => {
             if (isDraggingVolume) {
@@ -218,161 +227,226 @@ export default function AudioPlayer({
         };
     }, [isDraggingVolume, isDraggingProgress]);
 
-    const handleMuteToggle = () => {
-        if (isMuted) {
-            // Unmute
-            audioRef.current.volume = previousVolume;
-            const visualVolume = Math.sqrt(previousVolume);
-            volumeChangeRef.current.style.width = `${visualVolume * 100}%`;
-            setIsMuted(false);
-        } else {
-            // Mute
-            setPreviousVolume(audioRef.current.volume);
-            audioRef.current.volume = 0;
-            volumeChangeRef.current.style.width = '0%';
-            setIsMuted(true);
-        }
-    }
-
     if (!pickedSong) {
         return null;
     }
 
     if (!mounted) return null;
 
-    return createPortal(
-        <AudioPlayerContainerStyled>
-            <AudioPlayerWrapperStyled>
-                <audio
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={handleMetaDataLoad}
-                    onEnded={() => {
-                        if (!isRepeat) {
-                            if (onNext) {
-                                handleNext();
-                            } else {
-                                setIsPlaying(false);
-                            }
-                        }
-                    }}
-                    loop={isRepeat}
-                    style={{ display: "none" }}
-                    ref={audioRef}
-                ></audio>
+    return (
+        <>
+            {createPortal(
+                <AmbientAuraStyled $image={pickedSong?.songImage} $isVisible={!!pickedSong} />,
+                document.body
+            )}
 
-                {/* Mobile Top Progress Bar */}
-                <MobileProgressBarContainerStyled 
-                    ref={mobileSongBarRef} 
-                    onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e, mobileSongBarRef); }}
-                    onTouchStart={(e) => { 
-                        setIsDraggingProgress(true); 
-                        const clientX = e.touches[0].clientX;
-                        handleProgressBarUpdate({ pageX: clientX }, mobileSongBarRef); 
-                    }}
-                >
-                    <ProgressBarStyled ref={mobileProgressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
-                </MobileProgressBarContainerStyled>
+            {createPortal(
+                <AudioPlayerContainerStyled>
+                    <AudioPlayerWrapperStyled>
+                        <audio
+                            onTimeUpdate={handleTimeUpdate}
+                            onLoadedMetadata={handleMetaDataLoad}
+                            onEnded={() => {
+                                if (!isRepeat) {
+                                    if (onNext) {
+                                        handleNext();
+                                    } else {
+                                        setIsPlaying(false);
+                                    }
+                                }
+                            }}
+                            loop={isRepeat}
+                            style={{ display: "none" }}
+                            ref={audioRef}
+                        ></audio>
 
-                {/* 1. Song Identity (Pinned Left) */}
-                <IdentityGroupStyled>
-                    <ActiveSongWrapperStyled>
-                        <ActiveSongImageContainerStyled>
-                            <img src={pickedSong.songImage} alt="albumImage" />
-                        </ActiveSongImageContainerStyled>
-                        <ActiveSongDetailsStyled $shouldScroll={pickedSong.songName?.length > 20}>
-                            <p><span>{pickedSong.songName}</span></p>
-                            <p>{pickedSong.artist}</p>
-                            {pickedSong.album && <p className="album-name">{pickedSong.album}</p>}
-                        </ActiveSongDetailsStyled>
-                    </ActiveSongWrapperStyled>
-                </IdentityGroupStyled>
-
-                {/* 2. Center Group (Seeker & Volume) */}
-                <CenterGroupStyled>
-                    {/* Desktop Progress Bar */}
-                    <SongSliderContainerStyled className="desktop-only">
-                        {audioMetaData && (
-                            <>
-                                <p className="current-time">{currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds}</p>
-                                <ProgressBarContainerStyled
-                                    ref={songBarRef}
-                                    onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e); }}
-                                >
-                                    <ProgressBarStyled ref={progressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
-                                </ProgressBarContainerStyled>
-                                <p className="duration-text">{duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}</p>
-                            </>
-                        )}
-                    </SongSliderContainerStyled>
-
-                    <VolumeControlContainerStyled onWheel={handleVolumeScroll}>
-                        <span className="react-icon" onClick={handleMuteToggle}>
-                            {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
-                        </span>
-                        <VolumeControlBarStyled
-                            $volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50}
-                            ref={volumeControlBarRef}
-                            onMouseDown={(e) => { setIsDraggingVolume(true); handleVolumeChange(e); }}
-                            $isDragging={isDraggingVolume}
+                        {/* Mobile Top Progress Bar */}
+                        <MobileProgressBarContainerStyled 
+                            ref={mobileSongBarRef} 
+                            onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e, mobileSongBarRef); }}
+                            onTouchStart={(e) => { 
+                                setIsDraggingProgress(true); 
+                                const clientX = e.touches[0].clientX;
+                                handleProgressBarUpdate({ pageX: clientX }, mobileSongBarRef); 
+                            }}
                         >
-                            <VolumeChangeStyled ref={volumeChangeRef} $isDragging={isDraggingVolume}></VolumeChangeStyled>
-                        </VolumeControlBarStyled>
-                    </VolumeControlContainerStyled>
-                </CenterGroupStyled>
+                            <ProgressBarStyled ref={mobileProgressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
+                        </MobileProgressBarContainerStyled>
 
-                {/* 2. Playback Controls (Pinned Right on Mobile) */}
-                <PlaybackControlsGroupStyled>
-                    <MainPlayButtonStyled onClick={handlePlayPause}>
-                        {isPlaying ? <IoPause /> : <IoPlay style={{ paddingLeft: '2px' }} />}
-                    </MainPlayButtonStyled>
+                        {/* 1. Song Identity (Pinned Left) */}
+                        <IdentityGroupStyled onClick={() => window.innerWidth <= 480 && setIsExpanded(true)}>
+                            <ActiveSongWrapperStyled>
+                                <ActiveSongImageContainerStyled>
+                                    <img src={pickedSong.songImage} alt="albumImage" />
+                                </ActiveSongImageContainerStyled>
+                                <ActiveSongDetailsStyled $shouldScroll={pickedSong.songName?.length > 20}>
+                                    <p><span>{pickedSong.songName}</span></p>
+                                    <p>{pickedSong.artist}</p>
+                                    {pickedSong.album && <p className="album-name">{pickedSong.album}</p>}
+                                </ActiveSongDetailsStyled>
+                            </ActiveSongWrapperStyled>
+                        </IdentityGroupStyled>
 
-                    <ControlIconStyled className="prev-next" onClick={handlePrevious}>
-                        <BiSkipPrevious />
-                    </ControlIconStyled>
-                    <ControlIconStyled className="prev-next" onClick={handleNext}>
-                        <BiSkipNext />
-                    </ControlIconStyled>
+                        {/* 2. Center Group (Seeker & Volume) */}
+                        <CenterGroupStyled>
+                            {/* Desktop Progress Bar */}
+                            <SongSliderContainerStyled className="desktop-only">
+                                {audioMetaData && (
+                                    <>
+                                        <p className="current-time">{currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds}</p>
+                                        <ProgressBarContainerStyled
+                                            ref={songBarRef}
+                                            onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e); }}
+                                        >
+                                            <ProgressBarStyled ref={progressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
+                                        </ProgressBarContainerStyled>
+                                        <p className="duration-text">{duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}</p>
+                                    </>
+                                )}
+                            </SongSliderContainerStyled>
 
-                    {/* Mobile Only Timer */}
-                    <MobileTimerStyled>
-                        {currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds} / {duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}
-                    </MobileTimerStyled>
+                            <VolumeControlContainerStyled onWheel={handleVolumeScroll}>
+                                <span className="react-icon" onClick={handleMuteToggle}>
+                                    {isMuted ? <MdVolumeMute /> : <MdVolumeUp />}
+                                </span>
+                                <VolumeControlBarStyled
+                                    $volumePercent={audioRef.current?.volume ? Math.sqrt(audioRef.current.volume) * 100 : 50}
+                                    ref={volumeControlBarRef}
+                                    onMouseDown={(e) => { setIsDraggingVolume(true); handleVolumeChange(e); }}
+                                    $isDragging={isDraggingVolume}
+                                >
+                                    <VolumeChangeStyled ref={volumeChangeRef} $isDragging={isDraggingVolume}></VolumeChangeStyled>
+                                </VolumeControlBarStyled>
+                            </VolumeControlContainerStyled>
+                        </CenterGroupStyled>
 
-                    <span
-                        style={{ padding: '8px', cursor: 'pointer', display: 'flex' }}
-                        onClick={(e) => { e.stopPropagation(); setIsShuffle(!isShuffle); }}
-                    >
-                        {isShuffle ?
-                            <IoShuffle className="active" size={20} /> :
-                            <IoShuffleOutline size={20} />
-                        }
-                    </span>
-                    <span
-                        style={{ padding: '8px', cursor: 'pointer', display: 'flex' }}
-                        onClick={(e) => { e.stopPropagation(); setIsRepeat(!isRepeat); }}
-                    >
-                        {isRepeat ?
-                            <IoRepeat className="active" size={20} /> :
-                            <IoRepeatOutline size={20} />
-                        }
-                    </span>
-                </PlaybackControlsGroupStyled>
+                        {/* 3. Playback Controls */}
+                        <PlaybackControlsGroupStyled>
+                            <MainPlayButtonStyled onClick={handlePlayPause}>
+                                {isPlaying ? <IoPause /> : <IoPlay style={{ paddingLeft: '2px' }} />}
+                            </MainPlayButtonStyled>
 
-                {/* 5. Action Icons */}
-                <ActionGroupStyled>
-                    {onToggleFavorite && (
-                        <ActiveSongLikeButtonStyled onClick={onToggleFavorite} $isFavorite={isSongFavorite}>
-                            {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
-                        </ActiveSongLikeButtonStyled>
-                    )}
-                    <span><MdAddCircleOutline /></span>
+                            <ControlIconStyled className="prev-next" onClick={handlePrevious}>
+                                <BiSkipPrevious />
+                            </ControlIconStyled>
+                            <ControlIconStyled className="prev-next" onClick={handleNext}>
+                                <BiSkipNext />
+                            </ControlIconStyled>
 
-                    <span style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', marginLeft: '10px', paddingLeft: '15px' }}>
-                        <MdOpenInFull />
-                    </span>
-                </ActionGroupStyled>
-            </AudioPlayerWrapperStyled>
-        </AudioPlayerContainerStyled>,
-        document.body
+                            {/* Mobile Only Timer */}
+                            <MobileTimerStyled>
+                                {currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds} / {duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}
+                            </MobileTimerStyled>
+
+                            <span
+                                style={{ padding: '8px', cursor: 'pointer', display: 'flex' }}
+                                onClick={(e) => { e.stopPropagation(); setIsShuffle(!isShuffle); }}
+                            >
+                                {isShuffle ?
+                                    <IoShuffle className="active" size={20} /> :
+                                    <IoShuffleOutline size={20} />
+                                }
+                            </span>
+                            <span
+                                style={{ padding: '8px', cursor: 'pointer', display: 'flex' }}
+                                onClick={(e) => { e.stopPropagation(); setIsRepeat(!isRepeat); }}
+                            >
+                                {isRepeat ?
+                                    <IoRepeat className="active" size={20} /> :
+                                    <IoRepeatOutline size={20} />
+                                }
+                            </span>
+                        </PlaybackControlsGroupStyled>
+
+                        {/* 4. Action Icons */}
+                        <ActionGroupStyled>
+                            {onToggleFavorite && (
+                                <ActiveSongLikeButtonStyled onClick={onToggleFavorite} $isFavorite={isSongFavorite}>
+                                    {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
+                                </ActiveSongLikeButtonStyled>
+                            )}
+                            <span><MdAddCircleOutline /></span>
+
+                             <span 
+                                style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', marginLeft: '10px', paddingLeft: '15px', cursor: 'pointer' }}
+                                onClick={() => setIsExpanded(true)}
+                             >
+                                <MdOpenInFull />
+                             </span>
+                        </ActionGroupStyled>
+                    </AudioPlayerWrapperStyled>
+                </AudioPlayerContainerStyled>,
+                document.body
+            )}
+
+            {createPortal(
+                <ExpandedPlayerContainerStyled $isExpanded={isExpanded} $image={pickedSong?.songImage}>
+                    <ExpandedHeaderStyled>
+                        <span onClick={() => setIsExpanded(false)}><IoChevronDown /></span>
+                        <p>Now Playing</p>
+                        <span><IoShareOutline /></span>
+                    </ExpandedHeaderStyled>
+
+                    <ExpandedContentWrapperStyled>
+                        <ExpandedAlbumArtStyled>
+                            <img src={pickedSong.songImage} alt="album art" />
+                        </ExpandedAlbumArtStyled>
+
+                        <ExpandedRightSectionStyled>
+                            <ExpandedDetailsStyled>
+                                <h2>{pickedSong.songName}</h2>
+                                <p>{pickedSong.artist}</p>
+                            </ExpandedDetailsStyled>
+
+                            <ExpandedProgressStyled>
+                                <ProgressBarContainerStyled
+                                    ref={mobileSongBarRef}
+                                    onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e, mobileSongBarRef); }}
+                                    onTouchStart={(e) => { 
+                                        setIsDraggingProgress(true); 
+                                        const clientX = e.touches[0].clientX;
+                                        handleProgressBarUpdate({ pageX: clientX }, mobileSongBarRef); 
+                                    }}
+                                >
+                                    <ProgressBarStyled ref={mobileProgressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
+                                </ProgressBarContainerStyled>
+                                <div className="time-info">
+                                    <span>{currentTime.minutes}:{currentTime.seconds < 10 ? '0' : ''}{currentTime.seconds}</span>
+                                    <span>{duration.minutes}:{duration.seconds < 10 ? '0' : ''}{duration.seconds}</span>
+                                </div>
+                            </ExpandedProgressStyled>
+
+                            <ExpandedControlsStyled>
+                                <span className={`secondary-btn ${isShuffle ? 'active' : ''}`} onClick={() => setIsShuffle(!isShuffle)}>
+                                    {isShuffle ? <IoShuffle /> : <IoShuffleOutline />}
+                                </span>
+                                
+                                <div className="main-controls">
+                                    <span className="nav-btn" onClick={handlePrevious}><BiSkipPrevious /></span>
+                                    <span className="play-pause" onClick={handlePlayPause}>
+                                        {isPlaying ? <IoPause /> : <IoPlay style={{ paddingLeft: '4px' }} />}
+                                    </span>
+                                    <span className="nav-btn" onClick={handleNext}><BiSkipNext /></span>
+                                </div>
+
+                                <span className={`secondary-btn ${isRepeat ? 'active' : ''}`} onClick={() => setIsRepeat(!isRepeat)}>
+                                    {isRepeat ? <IoRepeat /> : <IoRepeatOutline />}
+                                </span>
+                            </ExpandedControlsStyled>
+                        </ExpandedRightSectionStyled>
+                    </ExpandedContentWrapperStyled>
+
+                    <ExpandedFooterStyled>
+                        {onToggleFavorite && (
+                            <span onClick={onToggleFavorite} style={{ color: isSongFavorite ? '#f83821' : 'white' }}>
+                                {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
+                            </span>
+                        )}
+                        <span><MdFormatListBulleted /></span>
+                    </ExpandedFooterStyled>
+                </ExpandedPlayerContainerStyled>,
+                document.body
+            )}
+        </>
     );
 }

@@ -11,8 +11,8 @@ export const AudioPlayerContainerStyled = styled.div`
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 90px;
-  background-color: rgba(18, 18, 18, 0.85);
+  height: 72px;
+  background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -22,6 +22,7 @@ export const AudioPlayerContainerStyled = styled.div`
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
   color: white;
   box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -142,7 +143,289 @@ export const CenterGroupStyled = styled.div`
   @media (max-width: 480px) {
     display: none;
   }
-`
+`;
+
+export const ExpandedPlayerContainerStyled = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #000;
+  z-index: 20000;
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  transform: translateY(${props => props.$isExpanded ? '0' : '100%'});
+  transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url(${props => props.$image});
+    background-size: cover;
+    background-position: center;
+    filter: blur(100px) brightness(0.3);
+    opacity: 1;
+    z-index: -1;
+    transform: scale(1.1);
+  }
+
+  @media (min-width: 1025px) {
+    padding: 60px 10%;
+    justify-content: center;
+  }
+`;
+
+export const ExpandedHeaderStyled = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  color: white;
+
+  span {
+    font-size: 28px;
+    cursor: pointer;
+    padding: 12px;
+    display: flex;
+    transition: transform 0.2s ease;
+    &:hover { transform: translateY(-2px); }
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.6;
+  }
+
+  @media (min-width: 1025px) {
+    position: absolute;
+    top: 40px;
+    left: 60px;
+    right: 60px;
+    margin-bottom: 0;
+  }
+`;
+
+export const ExpandedContentWrapperStyled = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+
+  @media (min-width: 1025px) {
+    flex-direction: row;
+    align-items: center;
+    gap: 80px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+`;
+
+export const ExpandedAlbumArtStyled = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+
+  img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    max-width: 380px;
+    border-radius: 20px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  @media (min-width: 1025px) {
+    margin-bottom: 0;
+    justify-content: flex-end;
+    img {
+      max-width: 500px;
+      &:hover { transform: scale(1.02); }
+    }
+  }
+`;
+
+export const ExpandedRightSectionStyled = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+
+  @media (min-width: 1025px) {
+    max-width: 600px;
+  }
+`;
+
+export const ExpandedDetailsStyled = styled.div`
+  margin-bottom: 40px;
+  color: white;
+
+  h2 {
+    margin: 0 0 12px 0;
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: -1px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 22px;
+    opacity: 0.6;
+    font-weight: 500;
+  }
+
+  @media (min-width: 1025px) {
+    h2 { font-size: 56px; }
+    p { font-size: 28px; }
+  }
+`;
+
+export const ExpandedProgressStyled = styled.div`
+  margin-bottom: 40px;
+
+  .time-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    color: rgba(255,255,255,0.4);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+`;
+
+export const ExpandedControlsStyled = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  color: white;
+
+  .main-controls {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+  }
+
+  span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover { opacity: 0.8; }
+    &:active { transform: scale(0.95); }
+  }
+
+  .play-pause {
+    width: 84px;
+    height: 84px;
+    background-color: white;
+    color: black;
+    border-radius: 50%;
+    font-size: 36px;
+    &:hover { transform: scale(1.05); }
+  }
+
+  .nav-btn {
+    font-size: 56px;
+  }
+
+  .secondary-btn {
+    font-size: 28px;
+    opacity: 0.4;
+    &.active {
+      opacity: 1;
+      color: #f83821;
+    }
+  }
+
+  @media (min-width: 1025px) {
+    justify-content: flex-start;
+    gap: 60px;
+  }
+`;
+
+export const ExpandedFooterStyled = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  opacity: 0.6;
+
+  span {
+    font-size: 28px;
+    cursor: pointer;
+    padding: 10px;
+    transition: all 0.2s ease;
+    &:hover { opacity: 1; color: white; }
+  }
+
+  @media (min-width: 1025px) {
+    position: absolute;
+    bottom: 40px;
+    left: 60px;
+    right: 60px;
+  }
+`;
+
+export const AmbientAuraStyled = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150vw;
+  height: 150vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition: opacity 1.5s ease-in-out;
+  opacity: ${props => props.$isVisible ? 0.7 : 0};
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url(${props => props.$image});
+    background-size: cover;
+    background-position: center;
+    filter: blur(80px) saturate(4);
+    animation: aura-pulse 15s ease-in-out infinite alternate;
+  }
+
+  @keyframes aura-pulse {
+    from { transform: scale(1); opacity: 0.8; }
+    to { transform: scale(1.2); opacity: 1; }
+  }
+
+  @media (max-width: 480px) {
+    width: 200vw;
+    height: 200vh;
+    opacity: 0.35;
+    
+    &::before {
+      filter: blur(80px) saturate(2.2);
+    }
+  }
+`;
 
 export const IdentityGroupStyled = styled.div`
   display: flex;
@@ -170,7 +453,7 @@ export const ActiveSongWrapperStyled = styled.div`
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: auto;
     max-width: 300px;
-    height: 70px;
+    height: 56px;
     flex-shrink: 0;
     margin: 0;
 
@@ -181,7 +464,7 @@ export const ActiveSongWrapperStyled = styled.div`
     @media (max-width: 768px) {
       display: flex;
       max-width: 100%;
-      height: 60px;
+      height: 50px;
       justify-content: flex-start;
     }
 `;
@@ -224,14 +507,14 @@ export const ActionGroupStyled = styled.div`
 `
 
 export const ActiveSongImageContainerStyled = styled.div`
-  width: 60px;
-  height: 60px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
 
   > img {
     border-radius: 4px;
-    width: 50px; /* Smaller, cleaner square */
-    height: 50px;
+    width: 40px; /* Smaller, cleaner square */
+    height: 40px;
     object-fit: cover;
   }
 

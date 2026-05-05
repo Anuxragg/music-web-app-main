@@ -14,9 +14,11 @@ body {
 
 #root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #000000;
+  background-color: transparent;
   width: 100%;
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
 }
 
 .App {
@@ -33,8 +35,8 @@ body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 120px; /* Space for the audio player */
-  background: linear-gradient(to bottom, #121212 0%, #000000 100%); /* Subtle depth */
+  padding-bottom: 90px; /* Slimmer space for player */
+  background: linear-gradient(to bottom, rgba(18, 18, 18, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%); /* Even lighter for maximum Aura pop */
 }
 
 /* Scrollbar Styling */

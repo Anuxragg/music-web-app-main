@@ -5,7 +5,9 @@ export const NavContainerStyled = styled.div`
   position: relative;
   height: 100vh;
   width: ${props => props.$collapsed ? '84px' : '280px'}; /* Slightly wider for library items */
-  background-color: #000000; /* Solid black sidebar per Spotify style */
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   overflow-y: auto;
   z-index: 2000;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -155,8 +157,8 @@ export const TopNavContainerStyled = styled.nav`
   padding: 16px 32px;
   height: 80px;
   width: 100%;
-  background-color: rgba(18, 18, 18, 0.98);
-  backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
   z-index: 1000;
   position: sticky;
   top: 0;
@@ -172,7 +174,7 @@ export const TopNavContainerStyled = styled.nav`
     height: 60px;
     position: sticky;
     top: 0;
-    background-color: #121212;
+    background-color: rgba(0, 0, 0, 0.4);
   }
 `;
 
