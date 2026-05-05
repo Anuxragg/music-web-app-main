@@ -381,7 +381,9 @@ export default function AudioPlayer({
                             <ExpandedHeaderStyled>
                                 <span onClick={() => setIsExpanded(false)}><IoChevronDown /></span>
                                 <p>Now Playing</p>
-                                <span><IoShareOutline /></span>
+                                <div className="header-actions">
+                                    <span><IoShareOutline /></span>
+                                </div>
                             </ExpandedHeaderStyled>
 
                             <ExpandedContentWrapperStyled>
@@ -391,8 +393,15 @@ export default function AudioPlayer({
 
                                 <ExpandedRightSectionStyled>
                                     <ExpandedDetailsStyled>
-                                        <h2>{pickedSong.songName}</h2>
-                                        <p>{pickedSong.artist}</p>
+                                        <div className="title-area">
+                                            <h2>{pickedSong.songName}</h2>
+                                            <p>{pickedSong.artist}</p>
+                                        </div>
+                                        {onToggleFavorite && (
+                                            <span className="like-btn" onClick={onToggleFavorite} style={{ color: isSongFavorite ? '#f83821' : 'white' }}>
+                                                {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
+                                            </span>
+                                        )}
                                     </ExpandedDetailsStyled>
 
                                     <ExpandedProgressStyled>
@@ -434,11 +443,6 @@ export default function AudioPlayer({
                             </ExpandedContentWrapperStyled>
 
                             <ExpandedFooterStyled>
-                                {onToggleFavorite && (
-                                    <span onClick={onToggleFavorite} style={{ color: isSongFavorite ? '#f83821' : 'white' }}>
-                                        {isSongFavorite ? <MdFavorite /> : <MdFavoriteBorder />}
-                                    </span>
-                                )}
                                 <span><MdFormatListBulleted /></span>
                             </ExpandedFooterStyled>
                         </ExpandedPlayerContainerStyled>,

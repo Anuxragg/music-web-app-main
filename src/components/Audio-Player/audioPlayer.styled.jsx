@@ -197,6 +197,12 @@ export const ExpandedHeaderStyled = styled.div`
   margin-bottom: 40px;
   color: white;
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   span {
     font-size: 28px;
     cursor: pointer;
@@ -293,12 +299,25 @@ export const ExpandedRightSectionStyled = styled.div`
 export const ExpandedDetailsStyled = styled.div`
   margin-bottom: 40px;
   color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .title-area {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
 
   h2 {
     margin: 0 0 12px 0;
     font-size: 36px;
     font-weight: 900;
     letter-spacing: -1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   p {
@@ -306,17 +325,34 @@ export const ExpandedDetailsStyled = styled.div`
     font-size: 22px;
     opacity: 0.6;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .like-btn {
+    font-size: 36px;
+    cursor: pointer;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    &:active { transform: scale(0.9); }
   }
 
   @media (max-width: 480px) {
     margin-bottom: 32px;
     h2 { font-size: 28px; }
     p { font-size: 18px; }
+    .like-btn { font-size: 28px; }
   }
 
   @media (min-width: 1025px) {
     h2 { font-size: 56px; }
     p { font-size: 28px; }
+    .like-btn { font-size: 48px; }
   }
 `;
 
