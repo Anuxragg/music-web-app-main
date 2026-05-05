@@ -386,43 +386,60 @@ export const ExpandedFooterStyled = styled.div`
 
 export const AmbientAuraStyled = styled.div`
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 150vw;
-  height: 150vh;
-  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1; /* Behind everything */
   pointer-events: none;
   overflow: hidden;
-  transition: opacity 1.5s ease-in-out;
-  opacity: ${props => props.$isVisible ? 0.7 : 0};
+  background-color: #150000;
+  transition: opacity 2s ease-in-out;
+  opacity: 1;
 
-  &::before {
+  &::before, &::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url(${props => props.$image});
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    filter: blur(140px) saturate(3);
+    opacity: 0.9;
+    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at center, #cc0000 0%, #4b0082 50%, #000000 90%)'};
     background-size: cover;
     background-position: center;
-    filter: blur(80px) saturate(4);
-    animation: aura-pulse 15s ease-in-out infinite alternate;
   }
 
-  @keyframes aura-pulse {
-    from { transform: scale(1); opacity: 0.8; }
-    to { transform: scale(1.2); opacity: 1; }
+  &::before {
+    animation: soul-drift 25s infinite linear;
+    z-index: 1;
+  }
+
+  &::after {
+    animation: soul-drift-reverse 35s infinite linear;
+    opacity: 0.7;
+    z-index: 2;
+    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 70% 70%, #ff0000 0%, transparent 80%)'};
+  }
+
+  @keyframes soul-drift {
+    0% { transform: rotate(0deg) scale(1) translate(0, 0); }
+    33% { transform: rotate(5deg) scale(1.1) translate(5%, 2%); }
+    66% { transform: rotate(-5deg) scale(1.05) translate(-3%, 5%); }
+    100% { transform: rotate(0deg) scale(1) translate(0, 0); }
+  }
+
+  @keyframes soul-drift-reverse {
+    0% { transform: rotate(0deg) scale(1.1) translate(0, 0); }
+    50% { transform: rotate(-8deg) scale(1) translate(-4%, -3%); }
+    100% { transform: rotate(0deg) scale(1.1) translate(0, 0); }
   }
 
   @media (max-width: 480px) {
-    width: 200vw;
-    height: 200vh;
-    opacity: 0.35;
-    
-    &::before {
-      filter: blur(80px) saturate(2.2);
+    opacity: 0.5;
+    &::before, &::after {
+      filter: blur(100px) saturate(1.5);
     }
   }
 `;

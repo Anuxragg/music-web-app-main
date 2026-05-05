@@ -649,9 +649,17 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         if (currentView === 'Discover' && !selectedGenre) skeletonType = 'discover';
         
         return (
-            <SongsListWrapperStyled>
-                <Skeleton type={skeletonType} />
-            </SongsListWrapperStyled>
+            <>
+                <SongsListWrapperStyled>
+                    <Skeleton type={skeletonType} />
+                </SongsListWrapperStyled>
+                <AudioPlayer 
+                    isShuffle={isShuffle} 
+                    setIsShuffle={setIsShuffle} 
+                    isRepeat={isRepeat} 
+                    setIsRepeat={setIsRepeat} 
+                />
+            </>
         );
     }
 

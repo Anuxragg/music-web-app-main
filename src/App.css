@@ -7,18 +7,18 @@
 
 body {
   margin: 0;
-  background-color: #000000; /* Solid black per Spotify */
+  background-color: transparent;
   color: white;
   overflow-x: hidden;
 }
 
 #root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: transparent;
+  background-color: transparent !important;
   width: 100%;
   min-height: 100vh;
   position: relative;
-  z-index: 1;
+  z-index: 1; /* Above Aura (z:0) */
 }
 
 .App {
