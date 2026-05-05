@@ -404,8 +404,8 @@ export const AmbientAuraStyled = styled.div`
     left: -50%;
     width: 200%;
     height: 200%;
-    filter: blur(120px) saturate(2.5); /* More diffuse, less intense saturation */
-    opacity: 0.6; /* Lower base opacity to avoid "too bright" look */
+    filter: blur(100px) saturate(3.5) contrast(1.2); /* Sharper, more vibrant 'glossy' look */
+    opacity: 0.7; /* Increased for more 'gloss' presence */
     background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 25% 25%, #001a66 0%, #0d0033 40%, #00000a 80%)'};
     background-size: cover;
     background-position: center;
@@ -418,9 +418,9 @@ export const AmbientAuraStyled = styled.div`
 
   &::after {
     animation: soul-drift-reverse 34s infinite linear;
-    opacity: 0.4; /* Subtle secondary layer */
+    opacity: 0.5; /* Stronger secondary highlights for glossiness */
     z-index: 2;
-    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 75% 35%, #008080 0%, transparent 65%)'}; /* Deeper teal instead of bright cyan */
+    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 75% 35%, #00b3b3 0%, transparent 65%)'}; /* More vibrant teal highlights */
   }
 
   @keyframes soul-drift {
