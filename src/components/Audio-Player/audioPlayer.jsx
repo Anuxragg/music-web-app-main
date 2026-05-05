@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { AudioPlayerContainerStyled, AudioPlayerWrapperStyled, ActiveSongWrapperStyled, ActiveSongImageContainerStyled, ActiveSongDetailsStyled, ActiveSongLikeButtonStyled, ActionGroupStyled, PlaybackControlsGroupStyled, CenterGroupStyled, IdentityGroupStyled, MobileProgressBarContainerStyled, MobileTimerStyled } from "./audioPlayer.styled";
 import { AudioPlayerDefaultStyled } from "./audioPlayerDefault.styled";
 import { AudioControlsContainerStyled, MainPlayButtonStyled, ControlIconStyled, VolumeControlContainerStyled, VolumeControlBarStyled, VolumeChangeStyled, SongSliderContainerStyled, ProgressBarContainerStyled, ProgressBarStyled } from "./audioControls.styled";
@@ -20,6 +21,9 @@ export default function AudioPlayer({
     isRepeat,
     setIsRepeat
 }) {
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     const [audioMetaData, setAudioMetaData] = useState(false);
     const [duration, setDuration] = useState(0)
@@ -234,7 +238,9 @@ export default function AudioPlayer({
         return null;
     }
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <AudioPlayerContainerStyled>
             <AudioPlayerWrapperStyled>
                 <audio
@@ -273,8 +279,8 @@ export default function AudioPlayer({
                         <ActiveSongImageContainerStyled>
                             <img src={pickedSong.songImage} alt="albumImage" />
                         </ActiveSongImageContainerStyled>
-                        <ActiveSongDetailsStyled>
-                            <p>{pickedSong.songName}</p>
+                        <ActiveSongDetailsStyled $shouldScroll={pickedSong.songName?.length > 20}>
+                            <p><span>{pickedSong.songName}</span></p>
                             <p>{pickedSong.artist}</p>
                             {pickedSong.album && <p className="album-name">{pickedSong.album}</p>}
                         </ActiveSongDetailsStyled>
@@ -366,6 +372,7 @@ export default function AudioPlayer({
                     </span>
                 </ActionGroupStyled>
             </AudioPlayerWrapperStyled>
-        </AudioPlayerContainerStyled>
-    )
+        </AudioPlayerContainerStyled>,
+        document.body
+    );
 }

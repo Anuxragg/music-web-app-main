@@ -1,19 +1,27 @@
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { SongSliderContainerStyled } from './audioControls.styled';
 
+const marquee = keyframes`
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+`;
+
 export const AudioPlayerContainerStyled = styled.div`
-  width: 100%;
-  height: 75px;
-  background-color: #121212;
   position: fixed;
   bottom: 0;
   left: 0;
-  color: white;
-  z-index: 9999;
-  padding: 0;
-  box-sizing: border-box;
+  width: 100%;
+  height: 90px;
+  background-color: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  z-index: 10000;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  color: white;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -21,11 +29,14 @@ export const AudioPlayerContainerStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    width: 100%;
-    left: 0;
+    width: 100vw !important;
+    left: 0 !important;
     height: 60px;
     min-height: 60px;
     padding: 0 5px;
+    background-color: rgba(18, 18, 18, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
   }
 `;
 
@@ -245,44 +256,46 @@ export const ActiveSongDetailsStyled = styled.div`
   > p:nth-child(1) {
     font-size: 13px;
     margin: 0;
+    font-weight: 600;
+    color: white;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 500;
+    position: relative;
+    width: 100%;
+    
+    // Marquee container
+    span {
+      display: inline-block;
+      padding-left: 0;
+      animation: ${props => props.$shouldScroll ? 'marquee 10s linear infinite' : 'none'};
+      
+      @keyframes marquee {
+        0% { transform: translateX(0); }
+        10% { transform: translateX(0); }
+        90% { transform: translateX(-50%); }
+        100% { transform: translateX(-50%); }
+      }
+    }
   }
 
   > p:nth-child(2) {
     font-size: 12px;
-    color: #b3b3b3;
+    color: rgba(255, 255, 255, 0.6);
     margin: 2px 0 0 0;
-  }
-
-  .album-name {
-    font-size: 12px;
-    color: #888;
-    margin: 1px 0 0 0;
-    font-weight: 300;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   @media (max-width: 480px) {
-    margin-left: 10px;
+    margin-left: 12px;
 
     > p:nth-child(1) {
       font-size: 14px;
-      font-weight: 600;
-      max-width: none;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
     }
 
     > p:nth-child(2) {
-      font-size: 12px;
-      color: #b3b3b3;
-      max-width: none;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
+      font-size: 11px;
     }
   }
 `;
