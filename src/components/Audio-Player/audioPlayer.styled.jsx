@@ -329,12 +329,13 @@ export const MobileProgressBarContainerStyled = styled.div`
     top: 0;
     left: 0;
     width: 100%;
-    height: 2px;
-    background-color: rgba(255, 255, 255, 0.1);
+    height: 10px;
+    background-color: transparent;
     z-index: 10;
+    cursor: pointer;
 
     & > div {
-        height: 100%;
+        height: 3px;
         border-radius: 0;
     }
   }

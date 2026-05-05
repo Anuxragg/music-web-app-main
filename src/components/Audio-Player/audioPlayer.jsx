@@ -179,31 +179,38 @@ export default function AudioPlayer({
 
     // Global drag handlers
     useEffect(() => {
-        const handleMouseMove = (e) => {
+        const handleMove = (e) => {
             if (isDraggingVolume) {
-                handleVolumeChange(e);
-            } else if (isDraggingProgress) {
-                handleProgressBarUpdate(e);
+                const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+                handleVolumeChange({ pageX: clientX });
+            }
+            if (isDraggingProgress) {
+                const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+                handleProgressBarUpdate({ pageX: clientX }, mobileSongBarRef);
             }
         };
 
-        const handleMouseUp = () => {
+        const handleEnd = () => {
             setIsDraggingVolume(false);
             setIsDraggingProgress(false);
-            document.body.style.userSelect = '';
-            document.body.style.cursor = '';
+            document.body.style.userSelect = 'auto';
+            document.body.style.cursor = 'default';
         };
 
         if (isDraggingVolume || isDraggingProgress) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+            window.addEventListener('touchmove', handleMove, { passive: false });
+            window.addEventListener('touchend', handleEnd);
             document.body.style.userSelect = 'none';
             document.body.style.cursor = 'grabbing';
         }
 
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('mousemove', handleMove);
+            window.removeEventListener('mouseup', handleEnd);
+            window.removeEventListener('touchmove', handleMove);
+            window.removeEventListener('touchend', handleEnd);
         };
     }, [isDraggingVolume, isDraggingProgress]);
 
@@ -248,9 +255,14 @@ export default function AudioPlayer({
                 ></audio>
 
                 {/* Mobile Top Progress Bar */}
-                <MobileProgressBarContainerStyled
-                    ref={mobileSongBarRef}
+                <MobileProgressBarContainerStyled 
+                    ref={mobileSongBarRef} 
                     onMouseDown={(e) => { setIsDraggingProgress(true); handleProgressBarUpdate(e, mobileSongBarRef); }}
+                    onTouchStart={(e) => { 
+                        setIsDraggingProgress(true); 
+                        const clientX = e.touches[0].clientX;
+                        handleProgressBarUpdate({ pageX: clientX }, mobileSongBarRef); 
+                    }}
                 >
                     <ProgressBarStyled ref={mobileProgressBarRef} $isDragging={isDraggingProgress}></ProgressBarStyled>
                 </MobileProgressBarContainerStyled>
