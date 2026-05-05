@@ -390,10 +390,10 @@ export const AmbientAuraStyled = styled.div`
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: -1; /* Behind everything */
+  z-index: -1; /* Behind root content but above html background */
   pointer-events: none;
   overflow: hidden;
-  background-color: #150000;
+  background-color: #00000a; /* Darker midnight base */
   transition: opacity 2s ease-in-out;
   opacity: 1;
 
@@ -404,23 +404,23 @@ export const AmbientAuraStyled = styled.div`
     left: -50%;
     width: 200%;
     height: 200%;
-    filter: blur(140px) saturate(3);
-    opacity: 0.9;
-    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at center, #cc0000 0%, #4b0082 50%, #000000 90%)'};
+    filter: blur(120px) saturate(2.5); /* More diffuse, less intense saturation */
+    opacity: 0.6; /* Lower base opacity to avoid "too bright" look */
+    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 25% 25%, #001a66 0%, #0d0033 40%, #00000a 80%)'};
     background-size: cover;
     background-position: center;
   }
 
   &::before {
-    animation: soul-drift 25s infinite linear;
+    animation: soul-drift 24s infinite linear;
     z-index: 1;
   }
 
   &::after {
-    animation: soul-drift-reverse 35s infinite linear;
-    opacity: 0.7;
+    animation: soul-drift-reverse 34s infinite linear;
+    opacity: 0.4; /* Subtle secondary layer */
     z-index: 2;
-    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 70% 70%, #ff0000 0%, transparent 80%)'};
+    background-image: ${props => props.$image ? `url(${props.$image})` : 'radial-gradient(circle at 75% 35%, #008080 0%, transparent 65%)'}; /* Deeper teal instead of bright cyan */
   }
 
   @keyframes soul-drift {

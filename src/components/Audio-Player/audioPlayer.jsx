@@ -230,7 +230,10 @@ export default function AudioPlayer({
 
     return (
         <>
-            <AmbientAuraStyled $image={pickedSong?.songImage} $isVisible={true} />
+            {createPortal(
+                <AmbientAuraStyled $image={pickedSong?.songImage} $isVisible={true} />,
+                document.body
+            )}
 
             {!pickedSong ? null : (
                 <>

@@ -5,15 +5,15 @@ export const NavContainerStyled = styled.div`
   position: relative;
   height: 100vh;
   width: ${props => props.$collapsed ? '84px' : '280px'}; /* Slightly wider for library items */
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background-color: rgba(0, 0, 0, 0.5); /* Slightly more transparent for better blending */
+  backdrop-filter: blur(25px); /* Increased blur for smoother blending */
+  -webkit-backdrop-filter: blur(25px);
   overflow-y: auto;
   z-index: 2000;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: none; /* Removed harsh border for better blending */
 
   @media (max-width: 768px) {
     width: ${props => props.$collapsed ? '78px' : '200px'};
@@ -157,12 +157,12 @@ export const TopNavContainerStyled = styled.nav`
   padding: 16px 32px;
   height: 80px;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px);
+  background-color: rgba(0, 0, 0, 0.3); /* Much lighter to blend with the Aura */
+  backdrop-filter: blur(15px);
   z-index: 1000;
   position: sticky;
   top: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: none; /* Removed harsh border for seamless transition */
 
   @media (max-width: 768px) {
     padding: 12px 20px;
