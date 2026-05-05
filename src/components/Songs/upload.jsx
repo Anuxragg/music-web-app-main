@@ -390,7 +390,7 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                     <label>Artist</label>
                     <input 
                         value={metadata.artist} 
-                        placeholder="Who is this?" 
+                        placeholder="Artist Name(s), separate with commas" 
                         onChange={(e) => setMetadata(m => ({...m, artist: e.target.value}))}
                     />
                 </InputGroupStyled>
@@ -412,13 +412,15 @@ export default function UploadSongs({ onCancel, user, songToEdit, prefillAlbum, 
                         onChange={(e) => setMetadata(m => ({...m, genre: e.target.value}))}
                     >
                         <option>Pop</option>
+                        <option>Bollywood</option>
                         <option>Romance</option>
                         <option>Sad</option>
-                        <option>Hip Hop</option>
-                        <option>Bollywood</option>
-                        <option>Rap</option>
+                        <option>Hip-Hop</option>
                         <option>Rock</option>
+                        <option>Rap</option>
                         <option>Phonk</option>
+                        <option>Old Bollywood</option>
+                        <option>Gazal</option>
                     </select>
                 </InputGroupStyled>
                 <datalist id="album-list">

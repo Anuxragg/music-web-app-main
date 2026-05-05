@@ -3,7 +3,7 @@ import { SongSliderContainerStyled } from './audioControls.styled';
 
 export const AudioPlayerContainerStyled = styled.div`
   width: 100%;
-  height: 90px;
+  height: 75px;
   background-color: #121212;
   position: fixed;
   bottom: 0;
@@ -23,8 +23,8 @@ export const AudioPlayerContainerStyled = styled.div`
   @media (max-width: 480px) {
     width: 100%;
     left: 0;
-    height: 70px;
-    min-height: 70px;
+    height: 60px;
+    min-height: 60px;
     padding: 0 5px;
   }
 `;
@@ -49,17 +49,43 @@ export const AudioPlayerWrapperStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    gap: 5px;
-    padding: 0 5px;
+    gap: 15px;
+    padding: 0 10px 0 0; 
+    justify-content: space-between;
   }
 `
 
 export const PlaybackControlsGroupStyled = styled.div`
   display: flex;
   align-items: center;
-  gap: 15px;
-  width: 250px;
+  gap: 18px;
+  width: auto;
   flex-shrink: 0;
+
+  // Icon sizing
+  span, svg, .react-icon {
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+
+    // Default sizing for shuffle/repeat
+    font-size: 16px; 
+
+    // Larger sizing for Next/Prev to match visual weight
+    &:nth-child(1), &:nth-child(3) {
+      font-size: 28px;
+    }
+
+    &:hover {
+      color: white;
+      /* removed scale effect */
+    }
+    &.active, &.active svg {
+      color: #f83821;
+    }
+  }
 
   @media (max-width: 1024px) {
     width: auto;
@@ -67,14 +93,24 @@ export const PlaybackControlsGroupStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    gap: 4px;
+    gap: 12px;
+    width: auto;
+    justify-content: flex-end;
+    margin-right: 0;
+    
+    // Hide shuffle and repeat on mobile
+    & > span:nth-last-child(1), /* Repeat span */
+    & > span:nth-last-child(2), /* Shuffle span */
+    & > :nth-child(2) /* BiSkipPrevious */ { 
+        display: none !important; 
+    }
   }
-`
+`;
 
 export const CenterGroupStyled = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* Center the seeker bar */
   flex: 1;
   gap: 20px;
   min-width: 0;
@@ -93,16 +129,28 @@ export const CenterGroupStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    gap: 5px;
+    display: none;
   }
 `
 
 export const IdentityGroupStyled = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 280px; /* Fixed width on desktop to keep seeker centered */
+  min-width: 0;
+  flex-shrink: 0;
+
+  @media (max-width: 1200px) {
+    width: 220px;
+  }
+
+  @media (max-width: 480px) {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+`;
 
 export const ActiveSongWrapperStyled = styled.div`
     display: flex;
@@ -120,7 +168,10 @@ export const ActiveSongWrapperStyled = styled.div`
     }
 
     @media (max-width: 768px) {
-      display: none; // Hide in small screens to save space for controls
+      display: flex;
+      max-width: 100%;
+      height: 60px;
+      justify-content: flex-start;
     }
 `;
 
@@ -129,19 +180,19 @@ export const ActionGroupStyled = styled.div`
     align-items: center;
     gap: 15px;
     flex-shrink: 0;
-    color: #b3b3b3;
+    color: white; /* Changed from #b3b3b3 */
 
     > span {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 22px;
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
             color: white;
-            transform: scale(1.1);
+            /* removed scale effect */
         }
 
         &.active {
@@ -174,8 +225,12 @@ export const ActiveSongImageContainerStyled = styled.div`
   }
 
   @media (max-width: 480px) {
-    width: 55px;
-    height: 55px;
+    width: 40px;
+    height: 40px;
+    > img {
+        width: 40px;
+        height: 40px;
+    }
   }
 `;
 
@@ -213,11 +268,21 @@ export const ActiveSongDetailsStyled = styled.div`
     margin-left: 10px;
 
     > p:nth-child(1) {
-      font-size: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      max-width: none;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
 
     > p:nth-child(2) {
-      font-size: 10px;
+      font-size: 12px;
+      color: #b3b3b3;
+      max-width: none;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
     }
   }
 `;
@@ -237,7 +302,7 @@ export const ActiveSongLikeButtonStyled = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    transform: scale(1.15);
+    /* removed scale effect */
     color: #f83821;
   }
 
@@ -253,4 +318,32 @@ export const ActiveSongLikeButtonStyled = styled.button`
     font-size: 16px;
     margin-left: 6px;
   }
-`
+`;
+
+export const MobileProgressBarContainerStyled = styled.div`
+  display: none;
+  
+  @media (max-width: 480px) {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.1);
+    z-index: 10;
+
+    & > div {
+        height: 100%;
+        border-radius: 0;
+    }
+  }
+`;
+
+export const MobileTimerStyled = styled.div`
+  display: none;
+
+  @media (max-width: 480px) {
+    display: none;
+  }
+`;

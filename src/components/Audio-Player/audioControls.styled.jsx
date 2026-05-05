@@ -28,11 +28,11 @@ export const MainPlayButtonStyled = styled.div`
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     color: white;
-    font-size: 24px;
+    font-size: 28px;
     flex-shrink: 0;
 
     &:hover {
-        transform: scale(1.08);
+        /* removed scale effect */
         background-color: #ff4a36;
     }
 
@@ -59,7 +59,7 @@ export const ControlIconStyled = styled.span`
 
     &:hover {
         color: white;
-        transform: scale(1.1);
+        /* removed scale effect */
     }
 
     &.prev-next {

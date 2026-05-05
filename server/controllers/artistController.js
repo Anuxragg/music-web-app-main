@@ -53,8 +53,8 @@ exports.artistUploadMiddleware = upload.fields([{ name: 'avatar', maxCount: 1 }]
 
 const uploadBufferToCloudinary = (buffer, folder) => new Promise((resolve, reject) => {
   const timeoutId = setTimeout(() => {
-    reject(new Error('Cloudinary upload timed out after 10 seconds'));
-  }, 10000);
+    reject(new Error('Cloudinary upload timed out after 60 seconds'));
+  }, 60000);
 
   const stream = cloudinary.uploader.upload_stream(
     { folder, resource_type: 'image' },

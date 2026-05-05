@@ -1,6 +1,9 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef } from 'react'
 import defaultArtistImg from '../../media/voj.jpg';
+import oldBollywoodImg from '../../media/old_bollywood.png';
+import gazalImg from '../../media/gazal.png';
+import Skeleton from '../Feedback/Skeleton';
 import AudioPlayer from '../Audio-Player/audioPlayer';
 import api from '../../services/api';
 import {
@@ -48,6 +51,8 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
     const [liveSongs, setLiveSongs] = useState([]);
     const [shuffledHomeSongs, setShuffledHomeSongs] = useState([]);
     const [registeredAlbums, setRegisteredAlbums] = useState([]);
+    const [localSearchQuery, setLocalSearchQuery] = useState('');
+    const [isLocalSearchOpen, setIsLocalSearchOpen] = useState(false);
     const [allArtists, setAllArtists] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingSong, setEditingSong] = useState(null);
@@ -99,8 +104,9 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         { name: 'Hip-Hop', image: '/media/genres/hiphop.png', bgColor: '#11998e' },
         { name: 'Rock', image: '/media/genres/rock.png', bgColor: '#8e9eab' },
         { name: 'Rap', image: '/media/genres/rap.png', bgColor: '#00c6ff' },
-        { name: 'Phonk', image: '/media/genres/phonk.png', bgColor: '#200122' },
-        { name: 'Classic', image: '/media/genres/classic.png', bgColor: '#eef2f3' },
+        { name: 'Phonk', image: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80' },
+        { name: 'Old Bollywood', image: oldBollywoodImg },
+        { name: 'Gazal', image: gazalImg }
     ];
 
     useEffect(() => {
@@ -526,16 +532,29 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
         heading = 'Liked Songs';
     } else if (currentView === 'Artists') {
         if (selectedArtist) {
-            displayedSongs = liveSongs.filter(song => song.artist === selectedArtist);
+            displayedSongs = liveSongs.filter(song => 
+                song.artist.split(',').map(n => n.trim()).includes(selectedArtist)
+            );
             heading = null;
         } else {
             isArtistView = true;
             heading = 'Artists';
-            const uniqueArtistNames = Array.from(new Set(liveSongs.map(song => song.artist)));
+            // Split by comma and deduplicate
+            const uniqueArtistNames = Array.from(new Set(
+                liveSongs.flatMap(song => 
+                    song.artist.split(',').map(n => n.trim()).filter(Boolean)
+                )
+            ));
+
             artistsList = uniqueArtistNames.map(name => {
                 const profile = allArtists.find(a => a.displayName === name);
-                return { name, image: profile?.avatar || defaultArtistImg, id: profile?._id };
-            });
+                return { 
+                    name, 
+                    image: profile?.avatar || defaultArtistImg, 
+                    id: profile?._id,
+                    hasAvatar: !!profile?.avatar
+                };
+            }).filter(a => a.hasAvatar || user?.role === 'admin');
         }
     } else if (currentView === 'Albums' || currentView === 'Album') {
         heading = 'Albums';
@@ -588,28 +607,58 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
 
     const handleNext = () => {
         const activeList = playingPlaylist.length > 0 ? playingPlaylist : displayedSongs;
+        if (activeList.length === 0) return;
+
         const currentIndex = activeList.findIndex(s => s.id === clickedSong?.id);
-        if (currentIndex !== -1) {
-            const nextIndex = (currentIndex + 1) % activeList.length;
-            setClickedSong(activeList[nextIndex]);
-            setIsPlaying(true);
+        let nextIndex;
+
+        if (isShuffle) {
+            nextIndex = Math.floor(Math.random() * activeList.length);
+            // If the same song is picked and there are others, try again once
+            if (nextIndex === currentIndex && activeList.length > 1) {
+                nextIndex = (nextIndex + 1) % activeList.length;
+            }
+        } else {
+            nextIndex = (currentIndex + 1) % activeList.length;
         }
+
+        setClickedSong(activeList[nextIndex]);
+        setIsPlaying(true);
     };
 
     const handlePrevious = () => {
         const activeList = playingPlaylist.length > 0 ? playingPlaylist : displayedSongs;
+        if (activeList.length === 0) return;
+
         const currentIndex = activeList.findIndex(s => s.id === clickedSong?.id);
-        if (currentIndex !== -1) {
-            const prevIndex = (currentIndex - 1 + activeList.length) % activeList.length;
-            setClickedSong(activeList[prevIndex]);
-            setIsPlaying(true);
+        let prevIndex;
+
+        if (isShuffle) {
+            prevIndex = Math.floor(Math.random() * activeList.length);
+        } else {
+            prevIndex = (currentIndex - 1 + activeList.length) % activeList.length;
         }
+
+        setClickedSong(activeList[prevIndex]);
+        setIsPlaying(true);
     };
+
+    if (loading) {
+        let skeletonType = 'home';
+        if (isAlbumView || isArtistProfileView) skeletonType = 'album';
+        if (currentView === 'Discover' && !selectedGenre) skeletonType = 'discover';
+        
+        return (
+            <SongsListWrapperStyled>
+                <Skeleton type={skeletonType} />
+            </SongsListWrapperStyled>
+        );
+    }
 
     return (
         <>
             <SongsListWrapperStyled>
-                {(!isHomeView && !isAlbumView) && (
+                {(!isHomeView && !isAlbumView && !isArtistProfileView) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
                         <button 
                             onClick={() => { 
@@ -707,7 +756,10 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 ) : isAlbumView ? (() => {
                     const actualAlbum = selectedAlbum ? registeredAlbums.find(a => a.title === selectedAlbum) : null;
                     const metaArtist = actualAlbum ? actualAlbum.artist : (selectedPlaylist ? 'Playlist Owner' : displayedSongs[0]?.artist || 'Various Artists');
-                    const metaImage = actualAlbum?.coverUrl || selectedPlaylist?.coverUrl || displayedSongs[0]?.songImage || '/m-app-logo.png';
+                    const metaImage = actualAlbum?.coverUrl || 
+                                     (selectedPlaylist ? (playlists.find(p => p._id === selectedPlaylist || p.id === selectedPlaylist)?.coverUrl) : null) || 
+                                     (selectedGenre ? (genres.find(g => g.name === selectedGenre)?.image) : null) ||
+                                     displayedSongs[0]?.songImage || '/m-app-logo.png';
                     const artistProfile = allArtists.find(a => a.displayName === metaArtist);
                     const metaIcon = artistProfile?.avatar || defaultArtistImg;
                     const metaYear = actualAlbum?.releaseDate ? new Date(actualAlbum.releaseDate).getFullYear() : '2024';
@@ -766,8 +818,25 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     {((currentView === 'Album' || currentView === 'Albums') && user?.role === 'admin' && selectedAlbum) && (
                                         <button className="icon-action" onClick={handleDeleteAlbumFully} style={{ color: '#ff4d4d' }} title="Delete Album Fully"><MdDelete /></button>
                                     )}
-                                    <div className="search-action">
-                                        <MdSearch />
+                                    <div className="search-action" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {isLocalSearchOpen ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: '20px', padding: '4px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                                <MdSearch style={{ color: '#b3b3b3', fontSize: '18px' }} />
+                                                <input 
+                                                    autoFocus
+                                                    placeholder="Search in list"
+                                                    value={localSearchQuery}
+                                                    onChange={(e) => setLocalSearchQuery(e.target.value)}
+                                                    style={{ background: 'none', border: 'none', color: 'white', fontSize: '13px', outline: 'none', width: '120px', marginLeft: '5px' }}
+                                                />
+                                                <MdClose 
+                                                    style={{ color: '#b3b3b3', fontSize: '18px', cursor: 'pointer' }} 
+                                                    onClick={() => { setIsLocalSearchOpen(false); setLocalSearchQuery(''); }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <MdSearch onClick={() => setIsLocalSearchOpen(true)} style={{ cursor: 'pointer' }} />
+                                        )}
                                     </div>
                                 </AlbumActionsRowStyled>
 
@@ -777,7 +846,13 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                     <span>Duration</span>
                                     <span></span>
                                 </AlbumTracklistHeaderStyled>
-                                {displayedSongs.map((song, index) => (
+                                {displayedSongs
+                                    .filter(song => 
+                                        !localSearchQuery || 
+                                        song.songName.toLowerCase().includes(localSearchQuery.toLowerCase()) ||
+                                        song.artist.toLowerCase().includes(localSearchQuery.toLowerCase())
+                                    )
+                                    .map((song, index) => (
                                     <AlbumTrackRowStyled key={song.id} onClick={() => handleSongClick(song, displayedSongs)}>
                                         <div className="col-index">
                                             {clickedSong?.id === song.id ? <IoPlay style={{ color: '#f83821' }} /> : index + 1}
@@ -827,15 +902,23 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 <div style={{ marginTop: '20px' }}>
                                     <p style={{ color: 'white', fontWeight: '800', marginBottom: '15px', fontSize: '15px', letterSpacing: '0.5px' }}>Featured Artists</p>
                                     <AlbumFeaturedArtistsStyled>
-                                        {Array.from(new Set([metaArtist, ...displayedSongs.map(s => s.artist)])).filter(n => n && n !== 'Various Artists' && n !== 'Playlist Owner').slice(0, 5).map(name => {
-                                            const profile = allArtists.find(a => a.displayName === name);
-                                            return (
-                                                <div key={name} className="artist-row" onClick={() => setSelectedArtist(name)}>
-                                                    <img src={profile?.avatar || defaultArtistImg} alt="" />
-                                                    <p>{name}</p>
+                                        {Array.from(new Set([
+                                            ...(metaArtist || '').split(',').map(n => n.trim()), 
+                                            ...displayedSongs.flatMap(s => (s.artist || '').split(',').map(n => n.trim()))
+                                        ]))
+                                            .filter(n => n && n !== 'Various Artists' && n !== 'Playlist Owner')
+                                            .map(name => ({
+                                                name,
+                                                profile: allArtists.find(a => a.displayName === name)
+                                            }))
+                                            .filter(item => item.profile?.avatar || user?.role === 'admin')
+                                            .slice(0, 5)
+                                            .map(item => (
+                                                <div key={item.name} className="artist-row" onClick={() => setSelectedArtist(item.name)}>
+                                                    <img src={item.profile?.avatar || defaultArtistImg} alt="" />
+                                                    <p>{item.name}</p>
                                                 </div>
-                                            );
-                                        })}
+                                            ))}
                                     </AlbumFeaturedArtistsStyled>
                                 </div>
                             </AlbumRightColStyled>
@@ -864,12 +947,14 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                 ) : isArtistProfileView ? (() => {
                     const artistInfo = allArtists.find(a => a.displayName === selectedArtist);
                     const artistImage = artistInfo?.avatar || defaultArtistImg;
-                    const artistSongs = liveSongs.filter(s => s.artist === selectedArtist);
+                    const artistSongs = liveSongs.filter(s => 
+                        s.artist.split(',').map(n => n.trim()).includes(selectedArtist)
+                    );
                     const artistAlbums = Array.from(new Set(artistSongs.map(s => s.albumText).filter(Boolean)));
                     const displayedArtistSongs = showAllArtistSongs ? artistSongs : artistSongs.slice(0, 5);
 
                     return (
-                        <ArtistProfileContainerStyled style={{ marginTop: '-40px' }}>
+                        <ArtistProfileContainerStyled style={{ marginTop: '0' }}>
                             <button 
                                 onClick={() => { setSelectedArtist(null); }}
                                 style={{ background: 'none', border: 'none', color: 'white', opacity: 0.7, cursor: 'pointer', marginBottom: '10px', padding: 0, display: 'flex', alignSelf: 'flex-start' }}
@@ -939,7 +1024,10 @@ export default function SongsList({ user, favorites, setFavorites, currentView, 
                                 <h2>Albums</h2>
                                 <div className="album-grid">
                                     {artistAlbums.map(albumName => {
-                                        const albumSongsList = liveSongs.filter(s => s.albumText === albumName && s.artist === selectedArtist);
+                                        const albumSongsList = liveSongs.filter(s => 
+                                            s.albumText === albumName && 
+                                            s.artist.split(',').map(n => n.trim()).includes(selectedArtist)
+                                        );
                                         const albumSong = albumSongsList[0];
                                         const registered = registeredAlbums.find(a => a.title === albumName);
                                         return (
