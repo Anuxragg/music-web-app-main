@@ -238,7 +238,7 @@ export default function AudioPlayer({
             {!pickedSong ? null : (
                 <>
                     {createPortal(
-                        <AudioPlayerContainerStyled>
+                        <AudioPlayerContainerStyled $isHidden={isExpanded}>
                             <AudioPlayerWrapperStyled>
                                 <audio
                                     onTimeUpdate={handleTimeUpdate}

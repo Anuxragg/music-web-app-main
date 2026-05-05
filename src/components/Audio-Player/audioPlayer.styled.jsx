@@ -7,6 +7,7 @@ const marquee = keyframes`
 `;
 
 export const AudioPlayerContainerStyled = styled.div`
+  display: ${props => props.$isHidden ? 'none' : 'flex'}; /* Hide mini-player when expanded */
   position: fixed;
   bottom: 0;
   left: 0;
@@ -177,6 +178,13 @@ export const ExpandedPlayerContainerStyled = styled.div`
     transform: scale(1.1);
   }
 
+  @media (max-width: 480px) {
+    padding: 32px 24px;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    justify-content: flex-start; /* Switch to flex-start and use gaps for better control */
+    gap: 20px;
+  }
+
   @media (min-width: 1025px) {
     padding: 60px 10%;
     justify-content: center;
@@ -206,6 +214,12 @@ export const ExpandedHeaderStyled = styled.div`
     text-transform: uppercase;
     letter-spacing: 2px;
     opacity: 0.6;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 24px;
+    p { font-size: 12px; }
+    span { font-size: 24px; }
   }
 
   @media (min-width: 1025px) {
@@ -243,10 +257,17 @@ export const ExpandedAlbumArtStyled = styled.div`
     width: 100%;
     aspect-ratio: 1/1;
     max-width: 380px;
-    border-radius: 20px;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.8);
     object-fit: cover;
     transition: transform 0.5s ease;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 32px;
+    img {
+      max-width: 85vw;
+    }
   }
 
   @media (min-width: 1025px) {
@@ -286,6 +307,12 @@ export const ExpandedDetailsStyled = styled.div`
     font-size: 22px;
     opacity: 0.6;
     font-weight: 500;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 32px;
+    h2 { font-size: 28px; }
+    p { font-size: 18px; }
   }
 
   @media (min-width: 1025px) {
@@ -352,6 +379,30 @@ export const ExpandedControlsStyled = styled.div`
     &.active {
       opacity: 1;
       color: #f83821;
+    }
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 24px;
+    justify-content: center; /* Center everything on mobile */
+    gap: 30px;
+
+    .main-controls {
+      gap: 25px;
+    }
+
+    .play-pause {
+      width: 72px;
+      height: 72px;
+      font-size: 32px;
+    }
+
+    .nav-btn {
+      font-size: 48px;
+    }
+
+    .secondary-btn {
+      display: none; /* Keep mobile clean */
     }
   }
 
